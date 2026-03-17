@@ -22,7 +22,9 @@ This repository now includes a pragmatic backend skeleton for the MVP:
 
 ### 1) Create local database
 
-The API reads `ScoreboardDatabase` from `appsettings.Development.json` by default:
+By default (without `ASPNETCORE_ENVIRONMENT`), tooling and the API use `appsettings.json` (`scoreboard`).
+
+If you want to use the local development database from `appsettings.Development.json`, set `ASPNETCORE_ENVIRONMENT=Development` when running EF commands and the API:
 
 - Host: `localhost`
 - Port: `5432`
@@ -39,13 +41,13 @@ createdb -h localhost -p 5432 -U postgres scoreboard_dev
 ### 2) Apply migrations
 
 ```bash
-dotnet ef database update --project src/Scoreboard.Infrastructure --startup-project src/Scoreboard.Api
+ASPNETCORE_ENVIRONMENT=Development dotnet ef database update --project src/Scoreboard.Infrastructure --startup-project src/Scoreboard.Api
 ```
 
 ### 3) Run the API
 
 ```bash
-dotnet run --project src/Scoreboard.Api
+ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Scoreboard.Api
 ```
 
 Useful local endpoints (replace `<port>` with the port shown by `dotnet run`):
