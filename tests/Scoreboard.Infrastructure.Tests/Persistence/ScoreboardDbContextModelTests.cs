@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Scoreboard.Domain.Scoring;
 using Scoreboard.Infrastructure.Persistence;
+using Xunit;
 
 namespace Scoreboard.Infrastructure.Tests.Persistence;
 

@@ -1,4 +1,5 @@
 using Scoreboard.Domain.Scoring;
+using Xunit;
 
 namespace Scoreboard.Domain.Tests.Scoring;
 
