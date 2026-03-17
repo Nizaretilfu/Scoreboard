@@ -12,9 +12,14 @@ public sealed class ParticipantConfiguration : IEntityTypeConfiguration<Particip
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).HasColumnName("id");
+        builder.Property(x => x.CompetitionId).HasColumnName("competition_id").IsRequired();
         builder.Property(x => x.Number).HasColumnName("number").IsRequired();
         builder.Property(x => x.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
 
-        builder.HasIndex(x => x.Number).IsUnique();
+        builder.HasIndex(x => new { x.CompetitionId, x.Number }).IsUnique();
+
+        builder.HasOne<Scoreboard.Domain.Competitions.Competition>()
+            .WithMany()
+            .HasForeignKey(x => x.CompetitionId);
     }
 }

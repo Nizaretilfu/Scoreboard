@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Scoreboard.Domain.Participants;
+using Scoreboard.Domain.RunParticipants;
 using Scoreboard.Domain.Scoring;
 using Scoreboard.Infrastructure.Persistence;
 using Xunit;
@@ -26,7 +28,7 @@ public sealed class ScoreboardDbContextModelTests
     }
 
     [Fact]
-    public void ScoreEntry_HasUniqueIndexForRunAndParticipant()
+    public void Participant_HasUniqueIndexForCompetitionAndNumber()
     {
         var options = new DbContextOptionsBuilder<ScoreboardDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -34,7 +36,24 @@ public sealed class ScoreboardDbContextModelTests
 
         using var context = new ScoreboardDbContext(options);
 
-        var entityType = context.Model.FindEntityType(typeof(ScoreEntry));
+        var entityType = context.Model.FindEntityType(typeof(Participant));
+        var uniqueIndex = entityType!.GetIndexes().SingleOrDefault(i =>
+            i.IsUnique &&
+            i.Properties.Select(p => p.Name).SequenceEqual(new[] { "CompetitionId", "Number" }));
+
+        Assert.NotNull(uniqueIndex);
+    }
+
+    [Fact]
+    public void RunParticipant_HasUniqueIndexForRunAndParticipant()
+    {
+        var options = new DbContextOptionsBuilder<ScoreboardDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using var context = new ScoreboardDbContext(options);
+
+        var entityType = context.Model.FindEntityType(typeof(RunParticipant));
         var uniqueIndex = entityType!.GetIndexes().SingleOrDefault(i =>
             i.IsUnique &&
             i.Properties.Select(p => p.Name).SequenceEqual(new[] { "RunId", "ParticipantId" }));

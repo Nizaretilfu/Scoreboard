@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scoreboard.Domain.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scoreboard.Infrastructure.Tests", "tests/Scoreboard.Infrastructure.Tests/Scoreboard.Infrastructure.Tests.csproj", "{BA06CE26-3A06-4A30-BFAF-B86E8A90CB89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scoreboard.Application.Tests", "tests/Scoreboard.Application.Tests/Scoreboard.Application.Tests.csproj", "{F9E3D6C2-B2D8-4CB5-9B36-0D96D7531EAA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scoreboard.Api.Tests", "tests/Scoreboard.Api.Tests/Scoreboard.Api.Tests.csproj", "{D52B8768-7D95-4D33-BE41-480EE7721D6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +48,14 @@ Global
 		{BA06CE26-3A06-4A30-BFAF-B86E8A90CB89}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA06CE26-3A06-4A30-BFAF-B86E8A90CB89}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA06CE26-3A06-4A30-BFAF-B86E8A90CB89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9E3D6C2-B2D8-4CB5-9B36-0D96D7531EAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9E3D6C2-B2D8-4CB5-9B36-0D96D7531EAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9E3D6C2-B2D8-4CB5-9B36-0D96D7531EAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9E3D6C2-B2D8-4CB5-9B36-0D96D7531EAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D52B8768-7D95-4D33-BE41-480EE7721D6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D52B8768-7D95-4D33-BE41-480EE7721D6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D52B8768-7D95-4D33-BE41-480EE7721D6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D52B8768-7D95-4D33-BE41-480EE7721D6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
