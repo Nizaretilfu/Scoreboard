@@ -1,0 +1,28 @@
+name: Codex - Address PR Review Feedback
+
+on:
+  pull_request_review_comment:
+    types:
+      - created
+  pull_request_review:
+    types:
+      - submitted
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  codex-review-fix:
+    if: >-
+      (github.event_name == 'pull_request_review_comment') ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run Codex for review feedback
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          prompt-file: .github/codex/prompts/address-pr-review.md

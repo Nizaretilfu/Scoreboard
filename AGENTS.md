@@ -404,6 +404,21 @@ For every implementation task:
 7. Do not change unrelated code while fixing CI.
 8. If a failure is caused by missing requirements or ambiguity, explain the blocker clearly in the PR comment.
 
+
+## Codex GitHub Automation Rules
+
+When Codex is triggered by GitHub Actions (for CI failures or PR reviews):
+
+1. Read `PROJECT.md`, `ARCHITECTURE.md` and `AGENTS.md` before making changes.
+2. Keep fixes scoped to the triggering context:
+   - CI failure automation: fix only root causes needed to restore passing CI.
+   - PR review automation: address requested review changes only.
+3. Do not broaden scope or introduce unrelated refactors.
+4. Commit directly to the originating PR branch with clear commit messages.
+5. After each fix, rerun/await relevant checks and iterate until CI is green.
+6. Summaries posted by automation should include: root cause, fix, tests/checks, and any follow-up risk.
+7. If blocked by missing secrets/permissions, report the exact missing requirement in the PR thread.
+
 ## Delivery Preference
 
 Prefer fully reviewable pull requests over partial suggestions.
