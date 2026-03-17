@@ -15,8 +15,15 @@ permissions:
 jobs:
   codex-review-fix:
     if: >-
-      (github.event_name == 'pull_request_review_comment') ||
-      (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested')
+      (
+        github.event_name == 'pull_request_review_comment' &&
+        contains(fromJson('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+      ) ||
+      (
+        github.event_name == 'pull_request_review' &&
+        github.event.review.state == 'changes_requested' &&
+        contains(fromJson('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)
+      )
     runs-on: ubuntu-latest
 
     steps:
