@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Scoreboard.Application.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Scoreboard.Infrastructure.Persistence;
 
@@ -19,6 +20,7 @@ public static class InfrastructureServiceCollectionExtensions
         }
 
         services.AddDbContext<ScoreboardDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IScoreboardDbContext>(provider => provider.GetRequiredService<ScoreboardDbContext>());
         return services;
     }
 }
