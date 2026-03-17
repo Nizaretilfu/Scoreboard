@@ -7,6 +7,8 @@ namespace Scoreboard.Infrastructure.Persistence.Migrations;
 
 public partial class AddCompetitionSetupStructures : Migration
 {
+    private static readonly Guid LegacyCompetitionId = new("11111111-1111-1111-1111-111111111111");
+
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropIndex(
@@ -17,8 +19,29 @@ public partial class AddCompetitionSetupStructures : Migration
             name: "competition_id",
             table: "participants",
             type: "uuid",
+            nullable: true);
+
+        migrationBuilder.Sql($"""
+            INSERT INTO competitions (id, name, competition_date)
+            SELECT '{LegacyCompetitionId}', 'Legacy Competition', CURRENT_DATE
+            WHERE EXISTS (SELECT 1 FROM participants)
+              AND NOT EXISTS (SELECT 1 FROM competitions WHERE id = '{LegacyCompetitionId}');
+            """);
+
+        migrationBuilder.Sql($"""
+            UPDATE participants
+            SET competition_id = '{LegacyCompetitionId}'
+            WHERE competition_id IS NULL;
+            """);
+
+        migrationBuilder.AlterColumn<Guid>(
+            name: "competition_id",
+            table: "participants",
+            type: "uuid",
             nullable: false,
-            defaultValue: Guid.Empty);
+            oldClrType: typeof(Guid),
+            oldType: "uuid",
+            oldNullable: true);
 
         migrationBuilder.CreateTable(
             name: "run_participants",
