@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Scoreboard.Domain.Scoring;
 using Scoreboard.Infrastructure.Persistence;
 using Xunit;
@@ -16,7 +18,8 @@ public sealed class ScoreboardDbContextModelTests
 
         using var context = new ScoreboardDbContext(options);
 
-        var entityType = context.Model.FindEntityType(typeof(ScoreEntry));
+        var designTimeModel = context.GetService<IDesignTimeModel>().Model;
+        var entityType = designTimeModel.FindEntityType(typeof(ScoreEntry));
         var checkConstraints = entityType!.GetCheckConstraints();
 
         Assert.Contains(checkConstraints, c => c.Name == "ck_score_entries_rings");
