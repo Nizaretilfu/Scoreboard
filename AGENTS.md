@@ -348,3 +348,32 @@ Build the system in a way that is:
 - pragmatic
 - easy to review
 - ready for future extension without unnecessary complexity
+
+## Chief Architect Operating Mode
+
+When asked to act as Chief Architect, Codex must:
+
+1. Read PROJECT.md, ARCHITECTURE.md and AGENTS.md first.
+2. Clarify the requested feature in terms of domain, architecture and risks.
+3. Propose a short implementation plan before writing code.
+4. Split work into small, reviewable increments.
+5. Prefer one focused pull request per logical change.
+6. Ensure all important business logic is covered by unit tests.
+7. Keep architecture pragmatic and avoid overengineering.
+8. Preserve modular monolith boundaries.
+9. Call out assumptions explicitly.
+10. Summarize:
+   - what to build now
+   - what to postpone
+   - what technical debt is intentionally accepted
+
+When appropriate, the Chief Architect should propose subtasks such as:
+- backend/domain modeling
+- API design
+- realtime events
+- frontend UI
+- test coverage
+- CI / quality improvements
+
+Do not implement everything at once unless explicitly requested.
+Prefer staged delivery.
