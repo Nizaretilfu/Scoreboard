@@ -55,3 +55,29 @@ Useful local endpoints (replace `<port>` with the port shown by `dotnet run`):
 - API root: `http://localhost:<port>/`
 - Health check: `http://localhost:<port>/health`
 - Swagger UI (Development): `http://localhost:<port>/swagger`
+
+## Codex automation workflows
+
+This repository includes GitHub Actions workflows that use the official Codex GitHub Action to support CI recovery and PR review remediation.
+
+### Implemented workflows
+
+- `.github/workflows/codex-on-ci-failure.yml`: triggers when the main `Build, Test and Coverage` workflow fails for a pull request.
+- `.github/workflows/codex-on-pr-review.yml`: triggers when a PR gets a new review comment, or when a review is submitted with `changes_requested`.
+
+### Required configuration
+
+Add this repository secret before using the workflows:
+
+- `OPENAI_API_KEY`: API key used by Codex GitHub Action.
+
+The workflows use the default `GITHUB_TOKEN` with explicitly declared permissions for branch updates and PR automation.
+
+### Prompt files
+
+Codex task guidance is stored in:
+
+- `.github/codex/prompts/fix-ci-failure.md`
+- `.github/codex/prompts/address-pr-review.md`
+
+Keep prompts focused and scoped so automation remains predictable and reviewable.
