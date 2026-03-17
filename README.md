@@ -67,11 +67,24 @@ This repository includes GitHub Actions workflows that use the official Codex Gi
 
 ### Required configuration
 
-Add this repository secret before using the workflows:
+Configure these repository settings before enabling Codex automation:
 
-- `OPENAI_API_KEY`: API key used by Codex GitHub Action.
+- Secret: `OPENAI_API_KEY` (required)
+  - API key used by the Codex GitHub Action.
+- Variable: `CODEX_TRUSTED_ACTORS` (required for review automation)
+  - Comma-separated GitHub usernames that are allowed to trigger PR review remediation.
+  - Example: `octocat,repo-admin`
+  - Template file: `.github/codex/trusted-actors.example.txt`
 
 The workflows use the default `GITHUB_TOKEN` with explicitly declared permissions for branch updates and PR automation.
+
+### Security guardrails
+
+- CI-failure automation runs only for pull requests whose head repository is this repository (not forks).
+- Review-triggered automation runs only when:
+  - the PR is from the same repository (not a fork), and
+  - the triggering actor appears in `CODEX_TRUSTED_ACTORS`.
+- This prevents exposing write-capable automation and secrets to untrusted fork PR contexts.
 
 ### Prompt files
 

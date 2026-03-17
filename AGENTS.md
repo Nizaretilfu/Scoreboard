@@ -418,6 +418,9 @@ When Codex is triggered by GitHub Actions (for CI failures or PR reviews):
 5. After each fix, rerun/await relevant checks and iterate until CI is green.
 6. Summaries posted by automation should include: root cause, fix, tests/checks, and any follow-up risk.
 7. If blocked by missing secrets/permissions, report the exact missing requirement in the PR thread.
+8. Never run write-capable automation for fork-originated pull requests.
+9. Review-triggered automation must run only for explicitly trusted actors (configured repository allowlist).
+10. Automation commits must stay minimal and preserve existing architecture boundaries.
 
 ## Delivery Preference
 
