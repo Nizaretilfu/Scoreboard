@@ -386,3 +386,25 @@ If a pull request fails CI:
 2. Identify compile or test failures
 3. Push a fix commit
 4. Repeat until CI passes
+
+## Pull Request and CI Automation Policy
+
+For every implementation task:
+
+1. Create a dedicated branch.
+2. Keep changes scoped to the approved PR/task.
+3. Commit logically grouped changes.
+4. Open a pull request with a clear title and summary.
+5. If CI fails:
+   - inspect the failing logs
+   - identify the root cause
+   - push a fix commit
+   - repeat until CI passes
+6. Do not ask for confirmation before fixing straightforward build/test issues.
+7. Do not change unrelated code while fixing CI.
+8. If a failure is caused by missing requirements or ambiguity, explain the blocker clearly in the PR comment.
+
+## Delivery Preference
+
+Prefer fully reviewable pull requests over partial suggestions.
+Do not stop after generating code if the branch has not been pushed and the PR has not been updated.
