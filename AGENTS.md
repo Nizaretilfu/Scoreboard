@@ -28,3 +28,14 @@ When implementing features:
 3. Implement commands/queries
 4. Add API endpoints
 5. Add SignalR events if needed
+
+## Mandatory Engineering Rules
+
+- Always add or update unit tests for relevant business logic.
+- Do not create pull requests with failing tests.
+- Prefer testable designs with clear separation of concerns.
+- Do not push directly to main or master.
+- All work must go through pull requests.
+- Assume code quality checks and security scans are mandatory.
+- Prefer simple, maintainable solutions over unnecessary abstraction.
+- Do not overengineer the first version.
