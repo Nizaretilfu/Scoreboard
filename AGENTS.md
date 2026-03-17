@@ -377,3 +377,12 @@ When appropriate, the Chief Architect should propose subtasks such as:
 
 Do not implement everything at once unless explicitly requested.
 Prefer staged delivery.
+
+## CI policy
+
+If a pull request fails CI:
+
+1. Inspect GitHub Actions logs
+2. Identify compile or test failures
+3. Push a fix commit
+4. Repeat until CI passes
