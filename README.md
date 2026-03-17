@@ -1,20 +1,20 @@
-# # Competition Score System
+# Competition Score System
 
 System for managing competitions with live scoring.
 
-Features:
-- Judges register scores via mobile web app
-- Management configures competitions and participants
-- Live scoreboard with animations when scores change
+## PR 1 backend foundation
 
-Tech stack:
-- ASP.NET Core
-- SignalR for realtime updates
-- EF Core
-- PostgreSQL
-- React frontend
+This repository now includes a pragmatic backend skeleton for the MVP:
 
-Architecture:
-- Modular monolith
-- CQRS-light
-- Event-driven realtime updates
+- `Scoreboard.sln` with API, Application, Domain, Infrastructure, and test projects
+- modular monolith folder boundaries for Competitions, Participants, Heats, Runs, Scoring, Leaderboard, and Shared
+- EF Core `ScoreboardDbContext` with explicit mappings
+- PostgreSQL wiring through `ScoreboardDatabase` connection string
+- first migration creating competitions, participants, heats, runs, and score entries tables
+- baseline unit tests for ring score invariants and EF model constraints
+
+## Running migrations
+
+```bash
+dotnet ef database update --project src/Scoreboard.Infrastructure --startup-project src/Scoreboard.Api
+```
