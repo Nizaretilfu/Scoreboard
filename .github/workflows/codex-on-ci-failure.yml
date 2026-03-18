@@ -20,10 +20,12 @@ concurrency:
 jobs:
   codex-fix:
     if: >-
+      vars.CODEX_TRUSTED_ACTORS != '' &&
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.repository.full_name == github.repository &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.actor.login != 'github-actions[bot]' &&
       contains(format(',{0},', vars.CODEX_TRUSTED_ACTORS), format(',{0},', github.event.workflow_run.actor.login)) &&
       secrets.OPENAI_API_KEY != ''
     runs-on: ubuntu-latest

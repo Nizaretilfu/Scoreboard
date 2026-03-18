@@ -109,6 +109,7 @@ Template values for trusted actors are provided in:
 
 - Automation that can write to branches does **not** run on fork PRs.
 - Trusted-actor checks are enforced before Codex remediation workflows execute.
+- Set `CODEX_TRUSTED_ACTORS` to a non-empty comma-separated allowlist (for example: `alice,bob`); when it is unset or empty, Codex workflows are skipped by design.
 - Workflow permissions are explicitly declared and scoped.
 - If required secrets/variables are missing, automation safely skips execution.
 

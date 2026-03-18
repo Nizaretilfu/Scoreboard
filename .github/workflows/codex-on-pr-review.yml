@@ -19,7 +19,9 @@ concurrency:
 jobs:
   codex-review-fix:
     if: >-
+      vars.CODEX_TRUSTED_ACTORS != '' &&
       github.event.pull_request.head.repo.fork == false &&
+      github.actor != 'github-actions[bot]' &&
       contains(format(',{0},', vars.CODEX_TRUSTED_ACTORS), format(',{0},', github.actor)) &&
       secrets.OPENAI_API_KEY != '' &&
       (
