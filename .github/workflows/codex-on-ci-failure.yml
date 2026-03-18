@@ -25,9 +25,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Run Codex on failed CI
-        uses: openai/codex-action@v1
+      - name: Debug workflow_run context
+        run: |
+          echo "workflow_run.id=${{ github.event.workflow_run.id }}"
+          echo "workflow_run.name=${{ github.event.workflow_run.name }}"
+          echo "workflow_run.event=${{ github.event.workflow_run.event }}"
+          echo "workflow_run.conclusion=${{ github.event.workflow_run.conclusion }}"
+          echo "workflow_run.head_branch=${{ github.event.workflow_run.head_branch }}"
+          echo "workflow_run.head_sha=${{ github.event.workflow_run.head_sha }}"
+          echo "workflow_run.repository.full_name=${{ github.event.workflow_run.repository.full_name }}"
+
+      - name: Check out failed workflow state
+        uses: actions/checkout@v4
         with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          prompt-file: .github/codex/prompts/fix-ci-failure.md
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Run Codex
