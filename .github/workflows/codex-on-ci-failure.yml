@@ -21,38 +21,65 @@ jobs:
   codex-fix:
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
-      github.event.workflow_run.event == 'pull_request'
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
-      - name: Debug workflow_run context
+      - name: Preflight trust and OPENAI_API_KEY checks
+        id: preflight
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CODEX_TRUSTED_ACTORS: ${{ vars.CODEX_TRUSTED_ACTORS }}
+          WORKFLOW_ACTOR: ${{ github.event.workflow_run.actor.login }}
         run: |
-          echo "workflow_run.id=${{ github.event.workflow_run.id }}"
-          echo "workflow_run.name=${{ github.event.workflow_run.name }}"
-          echo "workflow_run.event=${{ github.event.workflow_run.event }}"
-          echo "workflow_run.conclusion=${{ github.event.workflow_run.conclusion }}"
-          echo "workflow_run.head_branch=${{ github.event.workflow_run.head_branch }}"
-          echo "workflow_run.head_sha=${{ github.event.workflow_run.head_sha }}"
-          echo "workflow_run.repository.full_name=${{ github.event.workflow_run.repository.full_name }}"
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::notice::Skipping Codex remediation because OPENAI_API_KEY is not configured."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      - name: Check out failed workflow state
+          if [ -z "$CODEX_TRUSTED_ACTORS" ]; then
+            echo "::notice::Skipping Codex remediation because CODEX_TRUSTED_ACTORS is empty."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$WORKFLOW_ACTOR" = "github-actions[bot]" ]; then
+            echo "::notice::Skipping Codex remediation for github-actions[bot]."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          actor_lc="$(printf '%s' "$WORKFLOW_ACTOR" | tr '[:upper:]' '[:lower:]')"
+          trusted_csv_lc="$(printf '%s' "$CODEX_TRUSTED_ACTORS" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+
+          if [[ ",$trusted_csv_lc," != *",$actor_lc,"* ]]; then
+            echo "::notice::Skipping Codex remediation because actor '$WORKFLOW_ACTOR' is not in CODEX_TRUSTED_ACTORS."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Debug trusted actor gate inputs
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          echo "workflow_run.actor=${{ github.event.workflow_run.actor.login }}"
+          echo "head_repo=${{ github.event.workflow_run.head_repository.full_name }}"
+          echo "base_repo=${{ github.repository }}"
+
+      - name: Check out failed branch
+        if: steps.preflight.outputs.ready == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
-      - name: Run Codex on failed CI
+      - name: Run Codex CI remediation
+        if: steps.preflight.outputs.ready == 'true'
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            CI failed for a pull request.
-
-            Read PROJECT.md, ARCHITECTURE.md, and AGENTS.md first.
-
-            Inspect the repository and the failed workflow context.
-            Identify the smallest possible fix needed to make CI pass.
-            Keep the PR scope unchanged.
-            Do not change unrelated code.
-            After making the fix, stop.
+          prompt-file: .github/codex/prompts/fix-ci-failure.md
