@@ -1,5 +1,3 @@
-Test CI trigger
-
 # Competition Score System
 
 System for managing competitions with live scoring.
