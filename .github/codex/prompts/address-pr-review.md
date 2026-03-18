@@ -8,7 +8,9 @@ Follow these rules:
 3. Keep architecture boundaries and coding guidelines intact.
 4. Add or update tests if behavior changes.
 5. Commit changes to the same PR branch with a clear message.
-6. Reply with a concise summary of what was addressed and what remains.
+6. Trigger/re-run the PR checks after each fix.
+7. If there are still unresolved review comments or new changes-requested feedback, repeat until no blocking review comments remain.
+8. Reply with a concise summary of what was addressed and what remains.
 
 Repository instructions:
 - Read PROJECT.md, ARCHITECTURE.md and AGENTS.md before coding.
