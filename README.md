@@ -88,10 +88,12 @@ make run-api
   - includes `workflow_dispatch` for manual verification
   - uses NuGet cache and concurrency cancellation for faster feedback
 - `.github/workflows/codex-on-ci-failure.yml`
-  - runs only after failed PR CI from same repository
+  - runs only after failed PR CI from same repository and trusted actors
+  - applies minimal fix commits and re-triggers checks until build/test/coverage are green
   - requires trusted actor + API key
 - `.github/workflows/codex-on-pr-review.yml`
   - responds to review comments / `changes_requested`
+  - applies scoped fixes, reruns checks, and repeats on follow-up feedback until no blocking review comments remain
   - restricted to same-repo PRs, trusted actors, and configured API key
 
 ### Required repository configuration
