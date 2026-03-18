@@ -41,4 +41,18 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
-      - name: Run Codex
+      - name: Run Codex on failed CI
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            CI failed for a pull request.
+
+            Read PROJECT.md, ARCHITECTURE.md, and AGENTS.md first.
+
+            Inspect the repository and the failed workflow context.
+            Identify the smallest possible fix needed to make CI pass.
+            Keep the PR scope unchanged.
+            Do not change unrelated code.
+            After making the fix, stop.
