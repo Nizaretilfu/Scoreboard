@@ -21,38 +21,47 @@ jobs:
   codex-fix:
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
-      github.event.workflow_run.event == 'pull_request'
+      github.event.workflow_run.event == 'pull_request' &&
+      vars.CODEX_TRUSTED_ACTORS != '' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.pull_requests[0].number != null &&
+      github.event.workflow_run.pull_requests[0].user.login != 'github-actions[bot]' &&
+      contains(format(',{0},', vars.CODEX_TRUSTED_ACTORS), format(',{0},', github.event.workflow_run.pull_requests[0].user.login))
     runs-on: ubuntu-latest
 
     steps:
-      - name: Debug workflow_run context
+      - name: Preflight OPENAI_API_KEY check
+        id: preflight
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          echo "workflow_run.id=${{ github.event.workflow_run.id }}"
-          echo "workflow_run.name=${{ github.event.workflow_run.name }}"
-          echo "workflow_run.event=${{ github.event.workflow_run.event }}"
-          echo "workflow_run.conclusion=${{ github.event.workflow_run.conclusion }}"
-          echo "workflow_run.head_branch=${{ github.event.workflow_run.head_branch }}"
-          echo "workflow_run.head_sha=${{ github.event.workflow_run.head_sha }}"
-          echo "workflow_run.repository.full_name=${{ github.event.workflow_run.repository.full_name }}"
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::notice::Skipping Codex remediation because OPENAI_API_KEY is not configured."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      - name: Check out failed workflow state
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Debug trusted actor gate inputs
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          echo "workflow_run.actor=${{ github.event.workflow_run.actor.login }}"
+          echo "pr_author=${{ github.event.workflow_run.pull_requests[0].user.login }}"
+          echo "head_repo=${{ github.event.workflow_run.head_repository.full_name }}"
+          echo "base_repo=${{ github.repository }}"
+
+      - name: Check out failed branch
+        if: steps.preflight.outputs.ready == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
-      - name: Run Codex on failed CI
+      - name: Run Codex CI remediation
+        if: steps.preflight.outputs.ready == 'true'
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            CI failed for a pull request.
-
-            Read PROJECT.md, ARCHITECTURE.md, and AGENTS.md first.
-
-            Inspect the repository and the failed workflow context.
-            Identify the smallest possible fix needed to make CI pass.
-            Keep the PR scope unchanged.
-            Do not change unrelated code.
-            After making the fix, stop.
+          prompt-file: .github/codex/prompts/fix-ci-failure.md
