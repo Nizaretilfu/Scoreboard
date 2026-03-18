@@ -12,11 +12,16 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: codex-review-fix-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   codex-review-fix:
     if: >-
       github.event.pull_request.head.repo.fork == false &&
       contains(format(',{0},', vars.CODEX_TRUSTED_ACTORS), format(',{0},', github.actor)) &&
+      secrets.OPENAI_API_KEY != '' &&
       (
         github.event_name == 'pull_request_review_comment' ||
         (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested')
