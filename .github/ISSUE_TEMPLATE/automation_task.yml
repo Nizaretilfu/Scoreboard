@@ -1,0 +1,43 @@
+name: Automation / DevEx task
+description: Improve CI/CD, workflows, local tooling, or repository automation
+labels: ["automation", "devex"]
+body:
+  - type: input
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be faster or less manual?
+      placeholder: Reduce PR review turnaround and manual reruns
+    validations:
+      required: true
+  - type: textarea
+    id: current_pain
+    attributes:
+      label: Current pain point
+      description: Describe the manual work and impact
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_change
+    attributes:
+      label: Proposed change
+      description: Keep scope small and concrete
+    validations:
+      required: true
+  - type: textarea
+    id: security_notes
+    attributes:
+      label: Security and permissions notes
+      description: How are secrets, forks, and privileged actions protected?
+      placeholder: No secrets exposed to fork PRs; trusted-actor checks enforced.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable outcomes for completion
+      placeholder: |
+        - [ ] Workflow runs pass
+        - [ ] Docs updated
+        - [ ] No product functionality change

@@ -426,3 +426,18 @@ When Codex is triggered by GitHub Actions (for CI failures or PR reviews):
 
 Prefer fully reviewable pull requests over partial suggestions.
 Do not stop after generating code if the branch has not been pushed and the PR has not been updated.
+
+## Automation Guardrails (DevOps)
+
+When changing CI/CD, workflow automation or repository bots:
+
+1. Keep GitHub Action `permissions` least-privilege and explicit.
+2. Never expose write-capable automation to fork PR contexts.
+3. Require trusted-actor allowlists for review-triggered or self-healing automation.
+4. Keep automation changes small, auditable and scoped to one responsibility.
+5. Document every new required secret/variable in `README.md` and include a fallback behavior when missing.
+6. Prefer deterministic local helper commands that mirror CI steps.
+7. Use workflow/job concurrency when it reduces wasted runs without hiding failures.
+8. Do not auto-merge; human review remains mandatory.
+9. Do not introduce privileged `pull_request_target` automation unless explicitly required and security-reviewed.
+10. If automation is skipped due to trust or secret checks, make the skip reason obvious in workflow logic.

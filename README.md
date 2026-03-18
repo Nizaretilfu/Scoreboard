@@ -4,7 +4,7 @@ System for managing competitions with live scoring.
 
 ## PR 1 backend foundation
 
-This repository now includes a pragmatic backend skeleton for the MVP:
+This repository includes a pragmatic backend skeleton for the MVP:
 
 - `Scoreboard.sln` with API, Application, Domain, Infrastructure, and test projects
 - modular monolith folder boundaries for Competitions, Participants, Heats, Runs, Scoring, Leaderboard, and Shared
@@ -56,37 +56,73 @@ Useful local endpoints (replace `<port>` with the port shown by `dotnet run`):
 - Health check: `http://localhost:<port>/health`
 - Swagger UI (Development): `http://localhost:<port>/swagger`
 
-## Codex automation workflows
+## Local automation helpers
 
-This repository includes GitHub Actions workflows that use the official Codex GitHub Action to support CI recovery and PR review remediation.
+To reduce repetitive command typing, use:
 
-### Implemented workflows
+- `./scripts/dev.sh <command>`
+- `make <target>`
 
-- `.github/workflows/codex-on-ci-failure.yml`: triggers when the main `Build, Test and Coverage` workflow fails for a pull request.
-- `.github/workflows/codex-on-pr-review.yml`: triggers when a PR gets a new review comment, or when a review is submitted with `changes_requested`.
+Available commands/targets:
 
-### Required configuration
+- `restore` -> restore NuGet packages
+- `build` -> build solution in Release
+- `test` -> run tests with coverage (`./TestResults`)
+- `check` -> restore + build + test (CI-like local validation)
+- `run-api` -> run API in Development environment
+- `ef-update` -> apply migrations in Development environment
 
-Configure these repository settings before enabling Codex automation:
+Examples:
 
-- Secret: `OPENAI_API_KEY` (required)
-  - API key used by the Codex GitHub Action.
-- Variable: `CODEX_TRUSTED_ACTORS` (required for review automation)
-  - Comma-separated GitHub usernames that are allowed to trigger PR review remediation.
-  - Example: `octocat,repo-admin`
-  - Template file: `.github/codex/trusted-actors.example.txt`
+```bash
+./scripts/dev.sh check
+make run-api
+```
 
-The workflows use the default `GITHUB_TOKEN` with explicitly declared permissions for branch updates and PR automation.
+## CI/CD and Codex automation
+
+### Workflows
+
+- `.github/workflows/build.yml`
+  - Build + test on PRs and pushes to `main`/`master`
+  - includes `workflow_dispatch` for manual verification
+  - uses NuGet cache and concurrency cancellation for faster feedback
+- `.github/workflows/codex-on-ci-failure.yml`
+  - runs only after failed PR CI from same repository
+  - requires trusted actor + API key
+- `.github/workflows/codex-on-pr-review.yml`
+  - responds to review comments / `changes_requested`
+  - restricted to same-repo PRs, trusted actors, and configured API key
+
+### Required repository configuration
+
+| Type | Name | Required | Purpose |
+|---|---|---|---|
+| Secret | `OPENAI_API_KEY` | Yes (for Codex workflows) | Auth for Codex GitHub Action |
+| Variable | `CODEX_TRUSTED_ACTORS` | Yes (for Codex workflows) | Comma-separated allowlist of users who can trigger write-capable automation |
+
+Template values for trusted actors are provided in:
+
+- `.github/codex/trusted-actors.example.txt`
 
 ### Security guardrails
 
-- CI-failure automation runs only for pull requests whose head repository is this repository (not forks).
-- Review-triggered automation runs only when:
-  - the PR is from the same repository (not a fork), and
-  - the triggering actor appears in `CODEX_TRUSTED_ACTORS`.
-- This prevents exposing write-capable automation and secrets to untrusted fork PR contexts.
+- Automation that can write to branches does **not** run on fork PRs.
+- Trusted-actor checks are enforced before Codex remediation workflows execute.
+- Workflow permissions are explicitly declared and scoped.
+- If required secrets/variables are missing, automation safely skips execution.
 
-### Prompt files
+## PR and issue templates
+
+This repo includes:
+
+- `.github/pull_request_template.md` for consistent, reviewable PRs
+- `.github/ISSUE_TEMPLATE/bug_report.yml`
+- `.github/ISSUE_TEMPLATE/automation_task.yml`
+
+Use these templates to reduce manual triage and keep changes scoped and auditable.
+
+## Codex prompt files
 
 Codex task guidance is stored in:
 
