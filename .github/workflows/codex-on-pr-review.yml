@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: codex-review-fix-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   codex-review-fix:
@@ -42,6 +42,20 @@ jobs:
           fi
 
           echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Check out PR branch
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Rebase branch on latest remote state
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          git fetch origin "${{ github.event.pull_request.head.ref }}"
+          git checkout "${{ github.event.pull_request.head.ref }}"
+          git pull --rebase origin "${{ github.event.pull_request.head.ref }}"
 
       - name: Run Codex for review feedback
         if: steps.preflight.outputs.ready == 'true'

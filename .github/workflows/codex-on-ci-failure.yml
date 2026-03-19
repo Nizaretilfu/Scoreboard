@@ -14,8 +14,8 @@ permissions:
   checks: read
 
 concurrency:
-  group: codex-ci-fix-${{ github.event.workflow_run.id }}
-  cancel-in-progress: false
+  group: codex-ci-fix-${{ github.repository }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
 
 jobs:
   codex-fix:
@@ -55,6 +55,13 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
+
+      - name: Rebase branch on latest remote state
+        if: steps.preflight.outputs.ready == 'true'
+        run: |
+          git fetch origin "${{ github.event.workflow_run.head_branch }}"
+          git checkout "${{ github.event.workflow_run.head_branch }}"
+          git pull --rebase origin "${{ github.event.workflow_run.head_branch }}"
 
       - name: Run Codex CI remediation
         if: steps.preflight.outputs.ready == 'true'

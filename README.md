@@ -89,10 +89,14 @@ make run-api
   - uses NuGet cache and concurrency cancellation for faster feedback
 - `.github/workflows/codex-on-ci-failure.yml`
   - runs only after failed PR CI from same repository and trusted actors
+  - serializes remediation per branch and cancels stale runs to avoid competing automation commits
+  - fast-forwards/rebases to latest PR branch state before Codex writes changes
   - applies minimal fix commits and re-triggers checks until build/test/coverage are green
   - requires trusted actor + API key
 - `.github/workflows/codex-on-pr-review.yml`
   - responds to review comments / `changes_requested`
+  - serializes remediation per PR and cancels stale runs to reduce merge conflict risk
+  - fast-forwards/rebases to latest PR branch state before Codex writes changes
   - applies scoped fixes, reruns checks, and repeats on follow-up feedback until no blocking review comments remain
   - restricted to same-repo PRs, trusted actors, and configured API key
 
