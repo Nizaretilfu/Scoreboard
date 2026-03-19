@@ -23,7 +23,6 @@ jobs:
       github.event.pull_request.head.repo.fork == false &&
       github.actor != 'github-actions[bot]' &&
       contains(format(',{0},', vars.CODEX_TRUSTED_ACTORS), format(',{0},', github.actor)) &&
-      secrets.OPENAI_API_KEY != '' &&
       (
         github.event_name == 'pull_request_review_comment' ||
         (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested')
@@ -31,7 +30,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Preflight OPENAI_API_KEY check
+        id: preflight
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::notice::Skipping Codex review remediation because OPENAI_API_KEY is not configured."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
       - name: Run Codex for review feedback
+        if: steps.preflight.outputs.ready == 'true'
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}

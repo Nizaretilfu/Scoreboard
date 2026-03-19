@@ -88,10 +88,12 @@ make run-api
   - includes `workflow_dispatch` for manual verification
   - uses NuGet cache and concurrency cancellation for faster feedback
 - `.github/workflows/codex-on-ci-failure.yml`
-  - runs only after failed PR CI from same repository
+  - runs only after failed PR CI from same repository and trusted actors
+  - applies minimal fix commits and re-triggers checks until build/test/coverage are green
   - requires trusted actor + API key
 - `.github/workflows/codex-on-pr-review.yml`
   - responds to review comments / `changes_requested`
+  - applies scoped fixes, reruns checks, and repeats on follow-up feedback until no blocking review comments remain
   - restricted to same-repo PRs, trusted actors, and configured API key
 
 ### Required repository configuration
@@ -109,6 +111,8 @@ Template values for trusted actors are provided in:
 
 - Automation that can write to branches does **not** run on fork PRs.
 - Trusted-actor checks are enforced before Codex remediation workflows execute.
+- For CI-failure remediation, the workflow actor must be in `CODEX_TRUSTED_ACTORS`.
+- CI-failure trusted-actor matching is case-insensitive and trims spaces in the allowlist.
 - Set `CODEX_TRUSTED_ACTORS` to a non-empty comma-separated allowlist (for example: `alice,bob`); when it is unset or empty, Codex workflows are skipped by design.
 - Workflow permissions are explicitly declared and scoped.
 - If required secrets/variables are missing, automation safely skips execution.
