@@ -79,46 +79,27 @@ Examples:
 make run-api
 ```
 
-## CI/CD and Codex automation
+## CI/CD and collaboration workflow
 
-### Workflows
+### GitHub CI
+
+The repository keeps GitHub Actions focused on standard validation only:
 
 - `.github/workflows/build.yml`
-  - Build + test on PRs and pushes to `main`/`master`
-  - includes `workflow_dispatch` for manual verification
-  - uses NuGet cache and concurrency cancellation for faster feedback
-- `.github/workflows/codex-on-ci-failure.yml`
-  - runs only after failed PR CI from same repository and trusted actors
-  - serializes remediation per branch and cancels stale runs to avoid competing automation commits
-  - fast-forwards/rebases to latest PR branch state before Codex writes changes
-  - applies minimal fix commits and re-triggers checks until build/test/coverage are green
-  - requires trusted actor + API key
-- `.github/workflows/codex-on-pr-review.yml`
-  - responds to review comments / `changes_requested`
-  - serializes remediation per PR and cancels stale runs to reduce merge conflict risk
-  - fast-forwards/rebases to latest PR branch state before Codex writes changes
-  - applies scoped fixes, reruns checks, and repeats on follow-up feedback until no blocking review comments remain
-  - restricted to same-repo PRs, trusted actors, and configured API key
+  - Build + test on pull requests and pushes to `main`/`master`
+  - Includes `workflow_dispatch` for manual validation
 
-### Required repository configuration
+No API-key-based Codex automation is expected in GitHub Actions.
 
-| Type | Name | Required | Purpose |
-|---|---|---|---|
-| Secret | `OPENAI_API_KEY` | Yes (for Codex workflows) | Auth for Codex GitHub Action |
-| Variable | `CODEX_TRUSTED_ACTORS` | Yes (for Codex workflows) | Comma-separated allowlist of users who can trigger write-capable automation |
+### Codex usage model
 
-Template values for trusted actors are provided in:
+Codex support is handled outside GitHub Actions:
 
-- `.github/codex/trusted-actors.example.txt`
+- Use Codex via Slack / Codex cloud
+- For code review assistance, request it in PR discussion/review comments by mentioning `<@U0ALZ9Z1FT8>`
+- Keep human review approval as the merge gate
 
-### Security guardrails
-
-- Automation that can write to branches does **not** run on fork PRs.
-- Trusted-actor checks are enforced before Codex remediation workflows execute.
-- For CI-failure remediation, the workflow actor must be in `CODEX_TRUSTED_ACTORS`.
-- Set `CODEX_TRUSTED_ACTORS` to a non-empty comma-separated allowlist (for example: `alice,bob`); when it is unset or empty, Codex workflows are skipped by design.
-- Workflow permissions are explicitly declared and scoped.
-- If required secrets/variables are missing, automation safely skips execution.
+This keeps CI deterministic (build/test only) while still enabling Codex-assisted workflows when explicitly requested.
 
 ## PR and issue templates
 
@@ -130,11 +111,3 @@ This repo includes:
 
 Use these templates to reduce manual triage and keep changes scoped and auditable.
 
-## Codex prompt files
-
-Codex task guidance is stored in:
-
-- `.github/codex/prompts/fix-ci-failure.md`
-- `.github/codex/prompts/address-pr-review.md`
-
-Keep prompts focused and scoped so automation remains predictable and reviewable.

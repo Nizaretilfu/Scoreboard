@@ -387,7 +387,7 @@ If a pull request fails CI:
 3. Push a fix commit
 4. Repeat until CI passes
 
-## Pull Request and CI Automation Policy
+## Pull Request and Collaboration Workflow
 
 For every implementation task:
 
@@ -404,23 +404,13 @@ For every implementation task:
 7. Do not change unrelated code while fixing CI.
 8. If a failure is caused by missing requirements or ambiguity, explain the blocker clearly in the PR comment.
 
+### Codex usage in this repository
 
-## Codex GitHub Automation Rules
-
-When Codex is triggered by GitHub Actions (for CI failures or PR reviews):
-
-1. Read `PROJECT.md`, `ARCHITECTURE.md` and `AGENTS.md` before making changes.
-2. Keep fixes scoped to the triggering context:
-   - CI failure automation: fix only root causes needed to restore passing CI.
-   - PR review automation: address requested review changes only.
-3. Do not broaden scope or introduce unrelated refactors.
-4. Commit directly to the originating PR branch with clear commit messages.
-5. After each fix, rerun/await relevant checks and iterate until CI is green.
-6. Summaries posted by automation should include: root cause, fix, tests/checks, and any follow-up risk.
-7. If blocked by missing secrets/permissions, report the exact missing requirement in the PR thread.
-8. Never run write-capable automation for fork-originated pull requests.
-9. Review-triggered automation must run only for explicitly trusted actors (configured repository allowlist).
-10. Automation commits must stay minimal and preserve existing architecture boundaries.
+- Codex is used through Slack / Codex cloud, not through paid API-key GitHub Actions automation.
+- GitHub Actions is reserved for standard CI validation (build/test/checks).
+- For code review assistance, ask Codex in Slack or in PR review discussion with a mention to `<@U0ALZ9Z1FT8>`.
+- Human reviewers remain responsible for merge approval.
+- Do not add or depend on API-key-based write automation for PR remediation.
 
 ## Delivery Preference
 
@@ -432,12 +422,10 @@ Do not stop after generating code if the branch has not been pushed and the PR h
 When changing CI/CD, workflow automation or repository bots:
 
 1. Keep GitHub Action `permissions` least-privilege and explicit.
-2. Never expose write-capable automation to fork PR contexts.
-3. Require trusted-actor allowlists for review-triggered or self-healing automation.
-4. Keep automation changes small, auditable and scoped to one responsibility.
-5. Document every new required secret/variable in `README.md` and include a fallback behavior when missing.
-6. Prefer deterministic local helper commands that mirror CI steps.
-7. Use workflow/job concurrency when it reduces wasted runs without hiding failures.
-8. Do not auto-merge; human review remains mandatory.
-9. Do not introduce privileged `pull_request_target` automation unless explicitly required and security-reviewed.
-10. If automation is skipped due to trust or secret checks, make the skip reason obvious in workflow logic.
+2. Keep CI deterministic and focused on build/test/quality checks.
+3. Keep automation changes small, auditable and scoped to one responsibility.
+4. Prefer deterministic local helper commands that mirror CI steps.
+5. Use workflow/job concurrency when it reduces wasted runs without hiding failures.
+6. Do not auto-merge; human review remains mandatory.
+7. Do not introduce privileged `pull_request_target` automation unless explicitly required and security-reviewed.
+8. Do not introduce paid API-key-based Codex GitHub automation unless explicitly approved as a repository policy change.
