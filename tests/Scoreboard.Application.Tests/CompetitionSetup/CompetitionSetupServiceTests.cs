@@ -7,6 +7,7 @@ using Scoreboard.Domain.Heats;
 using Scoreboard.Domain.Participants;
 using Scoreboard.Domain.RunParticipants;
 using Scoreboard.Domain.Runs;
+using Scoreboard.Domain.Scoring;
 using Scoreboard.Infrastructure.Persistence;
 using Xunit;
 
@@ -93,6 +94,7 @@ public sealed class CompetitionSetupServiceTests
         public DbSet<Heat> Heats => dbContext.Heats;
         public DbSet<Run> Runs => dbContext.Runs;
         public DbSet<RunParticipant> RunParticipants => dbContext.RunParticipants;
+        public DbSet<ScoreEntry> ScoreEntries => dbContext.ScoreEntries;
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
