@@ -143,6 +143,64 @@ public sealed class CompetitionSetupService(IScoreboardDbContext dbContext)
         }
     }
 
+
+    public async Task<IReadOnlyList<CompetitionOverviewDto>> GetCompetitionsAsync(CancellationToken cancellationToken)
+    {
+        return await dbContext.Competitions
+            .AsNoTracking()
+            .OrderByDescending(c => c.CompetitionDate)
+            .ThenBy(c => c.Name)
+            .Select(c => new CompetitionOverviewDto(c.Id, c.Name, c.CompetitionDate))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CompetitionRunOverviewDto>> GetCompetitionRunsAsync(Guid competitionId, CancellationToken cancellationToken)
+    {
+        var runs = await (
+            from run in dbContext.Runs.AsNoTracking()
+            join heat in dbContext.Heats.AsNoTracking() on run.HeatId equals heat.Id
+            where heat.CompetitionId == competitionId
+            select new
+            {
+                RunId = run.Id,
+                run.HeatId,
+                HeatSequenceNumber = heat.SequenceNumber,
+                RunSequenceNumber = run.SequenceNumber
+            })
+            .OrderBy(x => x.HeatSequenceNumber)
+            .ThenBy(x => x.RunSequenceNumber)
+            .ToListAsync(cancellationToken);
+
+        var runIds = runs.Select(r => r.RunId).ToArray();
+        var participantsByRun = runIds.Length == 0
+            ? []
+            : await (
+                from assignment in dbContext.RunParticipants.AsNoTracking()
+                join participant in dbContext.Participants.AsNoTracking() on assignment.ParticipantId equals participant.Id
+                where runIds.Contains(assignment.RunId)
+                select new
+                {
+                    assignment.RunId,
+                    participant.Id,
+                    participant.Number,
+                    participant.Name
+                })
+                .ToListAsync(cancellationToken);
+
+        return runs
+            .Select(run => new CompetitionRunOverviewDto(
+                run.RunId,
+                run.HeatId,
+                run.HeatSequenceNumber,
+                run.RunSequenceNumber,
+                participantsByRun
+                    .Where(x => x.RunId == run.RunId)
+                    .OrderBy(x => x.Number)
+                    .Select(x => new RunParticipantOverviewDto(x.Id, x.Number, x.Name))
+                    .ToList()))
+            .ToList();
+    }
+
     public async Task<OperationResult<RunParticipantDto>> AssignParticipantToRunAsync(AssignParticipantToRunRequest request, CancellationToken cancellationToken)
     {
         var run = await dbContext.Runs.SingleOrDefaultAsync(r => r.Id == request.RunId, cancellationToken);

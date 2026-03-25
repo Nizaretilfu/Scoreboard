@@ -11,6 +11,14 @@ public sealed record ParticipantDto(Guid Id, Guid CompetitionId, int Number, str
 public sealed record HeatDto(Guid Id, Guid CompetitionId, int SequenceNumber);
 public sealed record RunDto(Guid Id, Guid HeatId, int SequenceNumber);
 public sealed record RunParticipantDto(Guid Id, Guid RunId, Guid ParticipantId);
+public sealed record CompetitionOverviewDto(Guid Id, string Name, DateOnly CompetitionDate);
+public sealed record RunParticipantOverviewDto(Guid ParticipantId, int ParticipantNumber, string ParticipantName);
+public sealed record CompetitionRunOverviewDto(
+    Guid RunId,
+    Guid HeatId,
+    int HeatSequenceNumber,
+    int RunSequenceNumber,
+    IReadOnlyList<RunParticipantOverviewDto> Participants);
 
 public sealed record OperationError(string Code, string Message);
 public sealed record OperationResult<T>(T? Value, OperationError? Error)

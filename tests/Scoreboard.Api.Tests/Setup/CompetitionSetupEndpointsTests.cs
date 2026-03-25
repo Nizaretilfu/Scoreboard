@@ -70,10 +70,61 @@ public sealed class CompetitionSetupEndpointsTests : IClassFixture<CompetitionSe
         Assert.Equal(HttpStatusCode.Created, assignmentResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task GetEndpoints_ReturnCompetitionsAndRunsWithParticipants()
+    {
+        var competition = await (await _httpClient.PostAsJsonAsync("/api/setup/competitions", new
+        {
+            name = "Autumn Cup",
+            competitionDate = "2026-03-20"
+        })).Content.ReadFromJsonAsync<CompetitionResponse>();
+
+        var participant = await (await _httpClient.PostAsJsonAsync("/api/setup/participants", new
+        {
+            competitionId = competition!.Id,
+            number = 7,
+            name = "Fast Rider"
+        })).Content.ReadFromJsonAsync<ParticipantResponse>();
+
+        var heat = await (await _httpClient.PostAsJsonAsync("/api/setup/heats", new
+        {
+            competitionId = competition.Id,
+            sequenceNumber = 1
+        })).Content.ReadFromJsonAsync<HeatResponse>();
+
+        var run = await (await _httpClient.PostAsJsonAsync("/api/setup/runs", new
+        {
+            heatId = heat!.Id,
+            sequenceNumber = 2
+        })).Content.ReadFromJsonAsync<RunResponse>();
+
+        await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new
+        {
+            runId = run!.Id,
+            participantId = participant!.Id
+        });
+
+        var competitionsResponse = await _httpClient.GetAsync("/api/setup/competitions");
+        Assert.Equal(HttpStatusCode.OK, competitionsResponse.StatusCode);
+
+        var competitions = await competitionsResponse.Content.ReadFromJsonAsync<IReadOnlyList<CompetitionResponse>>();
+        Assert.NotNull(competitions);
+        Assert.Contains(competitions!, c => c.Id == competition.Id);
+
+        var runsResponse = await _httpClient.GetAsync($"/api/setup/competitions/{competition.Id}/runs");
+        Assert.Equal(HttpStatusCode.OK, runsResponse.StatusCode);
+
+        var runs = await runsResponse.Content.ReadFromJsonAsync<IReadOnlyList<CompetitionRunResponse>>();
+        Assert.NotNull(runs);
+        Assert.Contains(runs!, r => r.RunId == run.Id && r.Participants.Any(p => p.ParticipantId == participant.Id));
+    }
+
     private sealed record CompetitionResponse(Guid Id);
     private sealed record ParticipantResponse(Guid Id);
     private sealed record HeatResponse(Guid Id);
     private sealed record RunResponse(Guid Id);
+    private sealed record CompetitionRunResponse(Guid RunId, IReadOnlyList<RunParticipantResponse> Participants);
+    private sealed record RunParticipantResponse(Guid ParticipantId);
 }
 
 public sealed class CompetitionSetupWebApplicationFactory : WebApplicationFactory<Program>

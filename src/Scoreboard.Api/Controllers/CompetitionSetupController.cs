@@ -8,6 +8,32 @@ namespace Scoreboard.Api.Controllers;
 [Route("api/setup")]
 public sealed class CompetitionSetupController(CompetitionSetupService setupService) : ControllerBase
 {
+
+    [HttpGet("competitions")]
+    public async Task<IReadOnlyList<CompetitionOverviewApiResponse>> GetCompetitions(CancellationToken cancellationToken)
+    {
+        var competitions = await setupService.GetCompetitionsAsync(cancellationToken);
+        return competitions
+            .Select(x => new CompetitionOverviewApiResponse(x.Id, x.Name, x.CompetitionDate))
+            .ToList();
+    }
+
+    [HttpGet("competitions/{competitionId:guid}/runs")]
+    public async Task<IReadOnlyList<CompetitionRunOverviewApiResponse>> GetCompetitionRuns(Guid competitionId, CancellationToken cancellationToken)
+    {
+        var runs = await setupService.GetCompetitionRunsAsync(competitionId, cancellationToken);
+        return runs
+            .Select(run => new CompetitionRunOverviewApiResponse(
+                run.RunId,
+                run.HeatId,
+                run.HeatSequenceNumber,
+                run.RunSequenceNumber,
+                run.Participants
+                    .Select(p => new RunParticipantOverviewApiResponse(p.ParticipantId, p.ParticipantNumber, p.ParticipantName))
+                    .ToList()))
+            .ToList();
+    }
+
     [HttpPost("competitions")]
     public async Task<IResult> CreateCompetition([FromBody] CreateCompetitionApiRequest request, CancellationToken cancellationToken)
     {

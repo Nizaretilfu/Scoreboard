@@ -167,3 +167,30 @@ This repo includes:
 
 Use these templates to reduce manual triage and keep changes scoped and auditable.
 
+
+## Frontend MVP app
+
+A minimal React judge + live scoreboard UI is included in `src/Scoreboard.Frontend`.
+
+It uses existing scoring and leaderboard APIs plus setup read endpoints:
+
+- `GET /api/setup/competitions`
+- `GET /api/setup/competitions/{competitionId}/runs`
+- `POST /api/scoring/scores`
+- `GET /api/leaderboard/competitions/{competitionId}`
+- SignalR hub: `/hubs/leaderboard`
+
+Run locally:
+
+```bash
+cd src/Scoreboard.Frontend
+npm install
+npm run dev
+```
+
+Run frontend tests:
+
+```bash
+cd src/Scoreboard.Frontend
+npm test
+```
