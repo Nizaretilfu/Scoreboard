@@ -36,9 +36,13 @@ export function App() {
   useEffect(() => {
     if (!selectedCompetitionId) {
       setRuns([]);
+      setSelectedRunId('');
       setRows([]);
       return;
     }
+
+    setRuns([]);
+    setSelectedRunId('');
 
     let isCancelled = false;
     let stopConnection: (() => Promise<void>) | null = null;
@@ -79,6 +83,11 @@ export function App() {
       });
     })
       .then((connection) => {
+        if (isCancelled) {
+          void connection.stop();
+          return;
+        }
+
         stopConnection = () => connection.stop();
       })
       .catch(() => {
@@ -120,6 +129,7 @@ export function App() {
           <select
             value={selectedCompetitionId}
             onChange={(event) => {
+              setRuns([]);
               setSelectedCompetitionId(event.target.value);
               setSelectedRunId('');
             }}>

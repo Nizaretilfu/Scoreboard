@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { App } from './App';
@@ -73,5 +73,71 @@ describe('App', () => {
     await waitFor(() => {
       expect(mockApi.registerScore).toHaveBeenCalledWith('r1', 'p1', 2);
     });
+  });
+
+  it('stops stale SignalR connection when competition changes before connect resolves', async () => {
+    const user = userEvent.setup();
+    let resolveConnection: ((value: { stop: ReturnType<typeof vi.fn> }) => void) | null = null;
+    const staleStop = vi.fn().mockResolvedValue(undefined);
+
+    mockApi.getCompetitions.mockResolvedValue([
+      { id: 'c1', name: 'Spring Cup', competitionDate: '2026-03-20' },
+      { id: 'c2', name: 'Summer Cup', competitionDate: '2026-03-21' }
+    ]);
+    mockApi.getCompetitionRuns.mockResolvedValue([]);
+    mockRealtime.connectToLeaderboardHub.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveConnection = resolve;
+        })
+    );
+    mockRealtime.connectToLeaderboardHub.mockResolvedValue({ stop: vi.fn().mockResolvedValue(undefined) });
+
+    render(<App />);
+
+    await screen.findByText('Summer Cup');
+    const competitionSelect = screen.getByLabelText('Competition');
+    await user.selectOptions(competitionSelect, 'c2');
+
+    resolveConnection?.({ stop: staleStop });
+
+    await waitFor(() => {
+      expect(staleStop).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('clears stale runs immediately when switching competitions', async () => {
+    const user = userEvent.setup();
+    mockApi.getCompetitions.mockResolvedValue([
+      { id: 'c1', name: 'Spring Cup', competitionDate: '2026-03-20' },
+      { id: 'c2', name: 'Summer Cup', competitionDate: '2026-03-21' }
+    ]);
+    mockApi.getCompetitionRuns.mockImplementation(async (competitionId: string) =>
+      competitionId === 'c1'
+        ? [
+            {
+              runId: 'r1',
+              heatId: 'h1',
+              heatSequenceNumber: 1,
+              runSequenceNumber: 1,
+              participants: []
+            }
+          ]
+        : []
+    );
+    mockApi.getLeaderboard.mockResolvedValue({
+      competitionId: 'c1',
+      generatedAtUtc: '2026-03-20T00:00:00Z',
+      rows: []
+    });
+
+    render(<App />);
+
+    await screen.findByRole('option', { name: 'Heat 1 / Run 1' });
+    const competitionSelect = screen.getByLabelText('Competition');
+    await user.selectOptions(competitionSelect, 'c2');
+
+    const runSelect = screen.getByLabelText('Run');
+    expect(within(runSelect).queryByRole('option', { name: 'Heat 1 / Run 1' })).not.toBeInTheDocument();
   });
 });
