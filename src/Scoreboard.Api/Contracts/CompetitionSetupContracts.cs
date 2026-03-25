@@ -1,3 +1,5 @@
+THIS_WILL_NOT_COMPILE
+
 namespace Scoreboard.Api.Contracts;
 
 public sealed record CreateCompetitionApiRequest(string Name, DateOnly CompetitionDate);
