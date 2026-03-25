@@ -1,3 +1,0 @@
-# Comma-separated GitHub usernames who are allowed to trigger Codex PR-review automation.
-# Copy these values into the repository variable CODEX_TRUSTED_ACTORS.
-octocat,repo-admin
