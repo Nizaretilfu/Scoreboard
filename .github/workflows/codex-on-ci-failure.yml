@@ -68,5 +68,4 @@ jobs:
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           prompt-file: .github/codex/prompts/fix-ci-failure.md
