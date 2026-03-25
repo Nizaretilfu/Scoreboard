@@ -138,7 +138,7 @@ public sealed class ScoringServiceTests
         Assert.Equal(2, context.ScoreEntries.Single().Rings);
     }
 
-    private static ScoringService CreateService(ScoreboardDbContext context, RecordingRealtimePublisher? publisher = null)
+    private static ScoringService CreateService(ScoreboardDbContext context, IScoreboardRealtimePublisher? publisher = null)
     {
         return new ScoringService(
             context,
