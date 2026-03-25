@@ -40,17 +40,13 @@ public sealed class ScoringService(
             return OperationResult<ScoreEntryDto>.Failure("run_not_found", "Run not found.");
         }
 
-        var leaderboardBefore = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
-            new GetCompetitionLeaderboardRequest(competitionId.Value),
-            cancellationToken);
-
         try
         {
             var entry = new ScoreEntry(Guid.NewGuid(), request.RunId, request.ParticipantId, request.Rings, DateTimeOffset.UtcNow);
             dbContext.ScoreEntries.Add(entry);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            await TryPublishScoreRegisteredAsync(competitionId.Value, request, leaderboardBefore);
+            await TryPublishScoreRegisteredAsync(competitionId.Value, request);
 
             return OperationResult<ScoreEntryDto>.Success(ToDto(entry));
         }
@@ -79,16 +75,12 @@ public sealed class ScoringService(
 
         var previousRings = entry.Rings;
 
-        var leaderboardBefore = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
-            new GetCompetitionLeaderboardRequest(competitionId.Value),
-            cancellationToken);
-
         try
         {
             entry.CorrectScore(request.Rings);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            await TryPublishScoreCorrectedAsync(competitionId.Value, request, previousRings, leaderboardBefore);
+            await TryPublishScoreCorrectedAsync(competitionId.Value, request, previousRings);
 
             return OperationResult<ScoreEntryDto>.Success(ToDto(entry));
         }
@@ -110,14 +102,18 @@ public sealed class ScoringService(
 
     private async Task TryPublishScoreRegisteredAsync(
         Guid competitionId,
-        RegisterScoreRequest request,
-        CompetitionLeaderboardDto leaderboardBefore)
+        RegisterScoreRequest request)
     {
         try
         {
             var leaderboardAfter = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
                 new GetCompetitionLeaderboardRequest(competitionId),
                 CancellationToken.None);
+
+            var leaderboardBefore = ReconstructLeaderboardBeforeScoreChange(
+                leaderboardAfter,
+                request.ParticipantId,
+                request.Rings);
 
             await realtimePublisher.PublishScoreRegisteredAsync(
                 new ScoreRegisteredRealtimeEvent(
@@ -143,14 +139,18 @@ public sealed class ScoringService(
     private async Task TryPublishScoreCorrectedAsync(
         Guid competitionId,
         CorrectScoreRequest request,
-        int previousRings,
-        CompetitionLeaderboardDto leaderboardBefore)
+        int previousRings)
     {
         try
         {
             var leaderboardAfter = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
                 new GetCompetitionLeaderboardRequest(competitionId),
                 CancellationToken.None);
+
+            var leaderboardBefore = ReconstructLeaderboardBeforeScoreChange(
+                leaderboardAfter,
+                request.ParticipantId,
+                request.Rings - previousRings);
 
             await realtimePublisher.PublishScoreCorrectedAsync(
                 new ScoreCorrectedRealtimeEvent(
@@ -188,6 +188,23 @@ public sealed class ScoringService(
         }
 
         return new ParticipantRankChangedEvent(participantId, beforeRank.Value, afterRank.Value);
+    }
+
+    private static CompetitionLeaderboardDto ReconstructLeaderboardBeforeScoreChange(
+        CompetitionLeaderboardDto leaderboardAfter,
+        Guid participantId,
+        int ringsDelta)
+    {
+        var rowsBefore = leaderboardAfter.Rows
+            .Select(row => row.ParticipantId == participantId
+                ? row with { TotalRings = Math.Max(0, row.TotalRings - ringsDelta) }
+                : row)
+            .OrderByDescending(row => row.TotalRings)
+            .ThenBy(row => row.ParticipantNumber)
+            .Select((row, index) => row with { Rank = index + 1 })
+            .ToList();
+
+        return leaderboardAfter with { Rows = rowsBefore };
     }
 
     private static ScoreEntryDto ToDto(ScoreEntry entry) =>
