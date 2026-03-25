@@ -56,6 +56,39 @@ Useful local endpoints (replace `<port>` with the port shown by `dotnet run`):
 - Health check: `http://localhost:<port>/health`
 - Swagger UI (Development): `http://localhost:<port>/swagger`
 
+### 4) Use Swagger + minimal API key auth
+
+Scoring endpoints are protected by a lightweight API key auth scheme.
+
+- Header: `X-Api-Key`
+- Development key (default): `dev-scoreboard-key`
+- Config path: `Authentication:ApiKey` in `appsettings*.json`
+
+In Development, open Swagger UI and click **Authorize**, then paste the key value:
+
+```
+dev-scoreboard-key
+```
+
+Protected endpoints:
+
+- `POST /api/scoring/scores` (register score for participant-in-run)
+- `PUT /api/scoring/scores` (correct existing score)
+
+Example curl commands:
+
+```bash
+curl -X POST "http://localhost:5000/api/scoring/scores" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-scoreboard-key" \
+  -d '{"runId":"<run-id>","participantId":"<participant-id>","rings":2}'
+
+curl -X PUT "http://localhost:5000/api/scoring/scores" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: dev-scoreboard-key" \
+  -d '{"runId":"<run-id>","participantId":"<participant-id>","rings":1}'
+```
+
 ## Local automation helpers
 
 To reduce repetitive command typing, use:
