@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Scoreboard.Application.Abstractions;
 using Scoreboard.Application.CompetitionSetup;
 using Scoreboard.Application.Leaderboard;
@@ -10,7 +11,8 @@ namespace Scoreboard.Application.Scoring;
 public sealed class ScoringService(
     IScoreboardDbContext dbContext,
     LeaderboardQueryService leaderboardQueryService,
-    IScoreboardRealtimePublisher realtimePublisher)
+    IScoreboardRealtimePublisher realtimePublisher,
+    ILogger<ScoringService> logger)
 {
     public async Task<OperationResult<ScoreEntryDto>> RegisterScoreAsync(RegisterScoreRequest request, CancellationToken cancellationToken)
     {
@@ -48,19 +50,7 @@ public sealed class ScoringService(
             dbContext.ScoreEntries.Add(entry);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            var leaderboardAfter = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
-                new GetCompetitionLeaderboardRequest(competitionId.Value),
-                cancellationToken);
-
-            await realtimePublisher.PublishScoreRegisteredAsync(
-                new ScoreRegisteredRealtimeEvent(
-                    competitionId.Value,
-                    request.RunId,
-                    request.ParticipantId,
-                    request.Rings,
-                    leaderboardAfter,
-                    ResolveRankChange(leaderboardBefore, leaderboardAfter, request.ParticipantId)),
-                cancellationToken);
+            await TryPublishScoreRegisteredAsync(competitionId.Value, request, leaderboardBefore);
 
             return OperationResult<ScoreEntryDto>.Success(ToDto(entry));
         }
@@ -98,20 +88,7 @@ public sealed class ScoringService(
             entry.CorrectScore(request.Rings);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            var leaderboardAfter = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
-                new GetCompetitionLeaderboardRequest(competitionId.Value),
-                cancellationToken);
-
-            await realtimePublisher.PublishScoreCorrectedAsync(
-                new ScoreCorrectedRealtimeEvent(
-                    competitionId.Value,
-                    request.RunId,
-                    request.ParticipantId,
-                    previousRings,
-                    request.Rings,
-                    leaderboardAfter,
-                    ResolveRankChange(leaderboardBefore, leaderboardAfter, request.ParticipantId)),
-                cancellationToken);
+            await TryPublishScoreCorrectedAsync(competitionId.Value, request, previousRings, leaderboardBefore);
 
             return OperationResult<ScoreEntryDto>.Success(ToDto(entry));
         }
@@ -129,6 +106,72 @@ public sealed class ScoringService(
                 where run.Id == runId
                 select (Guid?)heat.CompetitionId)
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task TryPublishScoreRegisteredAsync(
+        Guid competitionId,
+        RegisterScoreRequest request,
+        CompetitionLeaderboardDto leaderboardBefore)
+    {
+        try
+        {
+            var leaderboardAfter = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
+                new GetCompetitionLeaderboardRequest(competitionId),
+                CancellationToken.None);
+
+            await realtimePublisher.PublishScoreRegisteredAsync(
+                new ScoreRegisteredRealtimeEvent(
+                    competitionId,
+                    request.RunId,
+                    request.ParticipantId,
+                    request.Rings,
+                    leaderboardAfter,
+                    ResolveRankChange(leaderboardBefore, leaderboardAfter, request.ParticipantId)),
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Realtime publish failed after score registration. CompetitionId: {CompetitionId}, RunId: {RunId}, ParticipantId: {ParticipantId}",
+                competitionId,
+                request.RunId,
+                request.ParticipantId);
+        }
+    }
+
+    private async Task TryPublishScoreCorrectedAsync(
+        Guid competitionId,
+        CorrectScoreRequest request,
+        int previousRings,
+        CompetitionLeaderboardDto leaderboardBefore)
+    {
+        try
+        {
+            var leaderboardAfter = await leaderboardQueryService.GetCompetitionLeaderboardAsync(
+                new GetCompetitionLeaderboardRequest(competitionId),
+                CancellationToken.None);
+
+            await realtimePublisher.PublishScoreCorrectedAsync(
+                new ScoreCorrectedRealtimeEvent(
+                    competitionId,
+                    request.RunId,
+                    request.ParticipantId,
+                    previousRings,
+                    request.Rings,
+                    leaderboardAfter,
+                    ResolveRankChange(leaderboardBefore, leaderboardAfter, request.ParticipantId)),
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Realtime publish failed after score correction. CompetitionId: {CompetitionId}, RunId: {RunId}, ParticipantId: {ParticipantId}",
+                competitionId,
+                request.RunId,
+                request.ParticipantId);
+        }
     }
 
     private static ParticipantRankChangedEvent? ResolveRankChange(

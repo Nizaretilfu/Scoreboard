@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Scoreboard.Application.Leaderboard;
 using Scoreboard.Application.Realtime;
 using Scoreboard.Application.Scoring;
@@ -107,12 +108,43 @@ public sealed class ScoringServiceTests
         Assert.Equal("score_not_found", result.Error?.Code);
     }
 
+    [Fact]
+    public async Task RegisterScore_Succeeds_WhenRealtimePublishFails()
+    {
+        await using var context = CreateContext();
+        var (runId, participantId) = await SeedRunParticipantAsync(context);
+
+        var service = CreateService(context, new ThrowingRealtimePublisher());
+
+        var result = await service.RegisterScoreAsync(new RegisterScoreRequest(runId, participantId, 2), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(context.ScoreEntries);
+    }
+
+    [Fact]
+    public async Task CorrectScore_Succeeds_WhenRealtimePublishFails()
+    {
+        await using var context = CreateContext();
+        var (runId, participantId) = await SeedRunParticipantAsync(context);
+        await context.ScoreEntries.AddAsync(new Domain.Scoring.ScoreEntry(Guid.NewGuid(), runId, participantId, 1, DateTimeOffset.UtcNow));
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, new ThrowingRealtimePublisher());
+
+        var result = await service.CorrectScoreAsync(new CorrectScoreRequest(runId, participantId, 2), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, context.ScoreEntries.Single().Rings);
+    }
+
     private static ScoringService CreateService(ScoreboardDbContext context, RecordingRealtimePublisher? publisher = null)
     {
         return new ScoringService(
             context,
             new LeaderboardQueryService(context),
-            publisher ?? new RecordingRealtimePublisher());
+            publisher ?? new RecordingRealtimePublisher(),
+            NullLogger<ScoringService>.Instance);
     }
 
     private static ScoreboardDbContext CreateContext()
@@ -153,6 +185,19 @@ public sealed class ScoringServiceTests
         {
             ScoreCorrectedEvents.Add(@event);
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ThrowingRealtimePublisher : IScoreboardRealtimePublisher
+    {
+        public Task PublishScoreRegisteredAsync(ScoreRegisteredRealtimeEvent @event, CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("simulated publish failure");
+        }
+
+        public Task PublishScoreCorrectedAsync(ScoreCorrectedRealtimeEvent @event, CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("simulated publish failure");
         }
     }
 }
