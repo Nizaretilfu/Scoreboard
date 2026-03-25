@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Scoreboard.Api.Auth;
+using Scoreboard.Api.Hubs;
+using Scoreboard.Api.Realtime;
+using Scoreboard.Application.Realtime;
 using Scoreboard.Application.DependencyInjection;
 using Scoreboard.Infrastructure.DependencyInjection;
 using Scoreboard.Infrastructure.Persistence;
@@ -8,6 +11,7 @@ using Scoreboard.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -45,6 +49,7 @@ builder.Services
 builder.Services.AddAuthorization();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IScoreboardRealtimePublisher, SignalRScoreboardRealtimePublisher>();
 builder.Services.AddHealthChecks().AddDbContextCheck<ScoreboardDbContext>();
 
 var app = builder.Build();
@@ -60,6 +65,7 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapHub<LeaderboardHub>("/hubs/leaderboard");
 app.MapGet("/", () => Results.Ok(new { service = "scoreboard-api", status = "running" }));
 
 app.Run();

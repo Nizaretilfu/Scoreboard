@@ -75,6 +75,29 @@ Protected endpoints:
 - `POST /api/scoring/scores` (register score for participant-in-run)
 - `PUT /api/scoring/scores` (correct existing score)
 
+### Leaderboard query + realtime updates
+
+The MVP leaderboard is computed on demand from participant and score tables (no persisted projection).
+
+Ranking rule is deterministic:
+
+- highest total rings first
+- if tied, lowest participant number
+
+Endpoints and hubs:
+
+- `GET /api/leaderboard/competitions/{competitionId}`
+- SignalR hub: `/hubs/leaderboard`
+
+SignalR semantic events for scoreboard clients:
+
+- `scoreRegistered`
+- `scoreCorrected`
+- `leaderboardUpdated`
+- `participantRankChanged`
+
+Clients can call `JoinCompetition(competitionId)` to receive updates for one competition group.
+
 Example curl commands:
 
 ```bash
