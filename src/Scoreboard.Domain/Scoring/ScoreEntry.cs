@@ -7,12 +7,13 @@ public sealed class ScoreEntry
     public Guid ParticipantId { get; private set; }
     public int Rings { get; private set; }
     public DateTimeOffset RegisteredAtUtc { get; private set; }
+    public Guid? ClientSubmissionId { get; private set; }
 
     private ScoreEntry()
     {
     }
 
-    public ScoreEntry(Guid id, Guid runId, Guid participantId, int rings, DateTimeOffset registeredAtUtc)
+    public ScoreEntry(Guid id, Guid runId, Guid participantId, int rings, DateTimeOffset registeredAtUtc, Guid? clientSubmissionId = null)
     {
         EnsureValidRings(rings);
 
@@ -21,6 +22,7 @@ public sealed class ScoreEntry
         ParticipantId = participantId;
         Rings = rings;
         RegisteredAtUtc = registeredAtUtc;
+        ClientSubmissionId = clientSubmissionId;
     }
 
     public void CorrectScore(int rings)

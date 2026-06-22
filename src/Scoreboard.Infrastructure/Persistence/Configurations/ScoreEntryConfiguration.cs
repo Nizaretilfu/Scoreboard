@@ -16,8 +16,10 @@ public sealed class ScoreEntryConfiguration : IEntityTypeConfiguration<ScoreEntr
         builder.Property(x => x.ParticipantId).HasColumnName("participant_id").IsRequired();
         builder.Property(x => x.Rings).HasColumnName("rings").IsRequired();
         builder.Property(x => x.RegisteredAtUtc).HasColumnName("registered_at_utc").IsRequired();
+        builder.Property(x => x.ClientSubmissionId).HasColumnName("client_submission_id");
 
         builder.HasIndex(x => new { x.RunId, x.ParticipantId }).IsUnique();
+        builder.HasIndex(x => x.ClientSubmissionId).IsUnique();
 
         builder.HasOne<Scoreboard.Domain.Runs.Run>()
             .WithMany()

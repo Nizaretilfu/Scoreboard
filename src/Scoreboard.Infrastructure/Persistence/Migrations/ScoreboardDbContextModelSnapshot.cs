@@ -56,6 +56,7 @@ partial class ScoreboardDbContextModelSnapshot : ModelSnapshot
                 b.Property<Guid>("ParticipantId").HasColumnType("uuid").HasColumnName("participant_id");
                 b.Property<Guid>("RunId").HasColumnType("uuid").HasColumnName("run_id");
                 b.HasKey("Id");
+                b.HasIndex("ClientSubmissionId").IsUnique();
                 b.HasIndex("ParticipantId");
                 b.HasIndex("RunId", "ParticipantId").IsUnique();
                 b.ToTable("run_participants", (string)null);
@@ -74,11 +75,13 @@ partial class ScoreboardDbContextModelSnapshot : ModelSnapshot
         modelBuilder.Entity("Scoreboard.Domain.Scoring.ScoreEntry", b =>
             {
                 b.Property<Guid>("Id").HasColumnType("uuid").HasColumnName("id");
+                b.Property<Guid?>("ClientSubmissionId").HasColumnType("uuid").HasColumnName("client_submission_id");
                 b.Property<Guid>("ParticipantId").HasColumnType("uuid").HasColumnName("participant_id");
                 b.Property<DateTimeOffset>("RegisteredAtUtc").HasColumnType("timestamp with time zone").HasColumnName("registered_at_utc");
                 b.Property<int>("Rings").HasColumnType("integer").HasColumnName("rings");
                 b.Property<Guid>("RunId").HasColumnType("uuid").HasColumnName("run_id");
                 b.HasKey("Id");
+                b.HasIndex("ClientSubmissionId").IsUnique();
                 b.HasIndex("ParticipantId");
                 b.HasIndex("RunId", "ParticipantId").IsUnique();
                 b.ToTable("score_entries", (string)null);

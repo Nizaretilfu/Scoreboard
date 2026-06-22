@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 const mockApi = vi.hoisted(() => ({
@@ -19,6 +19,8 @@ vi.mock('./lib/realtime', () => mockRealtime);
 
 describe('App', () => {
   beforeEach(() => {
+    cleanup();
+    window.localStorage.clear();
     vi.clearAllMocks();
     mockApi.getCompetitions.mockResolvedValue([
       { id: 'c1', name: 'Spring Cup', competitionDate: '2026-03-20' }
@@ -54,10 +56,15 @@ describe('App', () => {
     mockApi.registerScore.mockResolvedValue({});
   });
 
+  afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
+  });
+
   it('loads competitions and run participants', async () => {
     render(<App />);
 
-    expect(await screen.findByText('Rider One')).toBeInTheDocument();
+    expect((await screen.findAllByText('Rider One')).length).toBeGreaterThan(0);
     expect(mockApi.getCompetitions).toHaveBeenCalledTimes(1);
     expect(mockApi.getCompetitionRuns).toHaveBeenCalledWith('c1');
     expect(mockRealtime.connectToLeaderboardHub).toHaveBeenCalledWith('c1', expect.any(Function));
@@ -71,7 +78,7 @@ describe('App', () => {
     await user.click(scoreButton);
 
     await waitFor(() => {
-      expect(mockApi.registerScore).toHaveBeenCalledWith('r1', 'p1', 2);
+      expect(mockApi.registerScore).toHaveBeenCalledWith('r1', 'p1', 2, expect.any(String));
     });
   });
 
@@ -99,7 +106,8 @@ describe('App', () => {
     const competitionSelect = screen.getByLabelText('Competition');
     await user.selectOptions(competitionSelect, 'c2');
 
-    resolveConnection?.({ stop: staleStop });
+    expect(resolveConnection).not.toBeNull();
+    resolveConnection!({ stop: staleStop });
 
     await waitFor(() => {
       expect(staleStop).toHaveBeenCalledTimes(1);
@@ -140,4 +148,24 @@ describe('App', () => {
     const runSelect = screen.getByLabelText('Run');
     expect(within(runSelect).queryByRole('option', { name: 'Heat 1 / Run 1' })).not.toBeInTheDocument();
   });
+
+  it('keeps failed score submissions pending and retries automatically', async () => {
+    const user = userEvent.setup();
+    mockApi.registerScore.mockRejectedValueOnce(new Error('network down')).mockResolvedValueOnce({});
+
+    render(<App />);
+
+    const scoreButton = await screen.findByRole('button', { name: '2' });
+    await user.click(scoreButton);
+
+    expect(await screen.findByText(/1 score pending/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Pending sync: 2 rings/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockApi.registerScore).toHaveBeenCalledTimes(2);
+    }, { timeout: 4000 });
+
+    expect(await screen.findByText(/All scores sent/i)).toBeInTheDocument();
+  });
+
 });

@@ -82,3 +82,23 @@ button {
 .hint {
   color: #475569;
 }
+
+.sync-status {
+  display: inline-flex;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 700;
+}
+
+.sync-status--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pending-note {
+  margin: 0.35rem 0 0;
+  color: #92400e;
+  font-weight: 700;
+}

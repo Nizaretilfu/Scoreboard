@@ -20,14 +20,14 @@ export function getCompetitionRuns(competitionId: string) {
   return readJson<CompetitionRun[]>(`/api/setup/competitions/${competitionId}/runs`);
 }
 
-export function registerScore(runId: string, participantId: string, rings: 0 | 1 | 2) {
+export function registerScore(runId: string, participantId: string, rings: 0 | 1 | 2, clientSubmissionId?: string) {
   return readJson('/api/scoring/scores', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Api-Key': apiKey
     },
-    body: JSON.stringify({ runId, participantId, rings })
+    body: JSON.stringify({ runId, participantId, rings, clientSubmissionId })
   });
 }
 

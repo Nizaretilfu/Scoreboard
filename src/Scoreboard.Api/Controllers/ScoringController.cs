@@ -15,7 +15,7 @@ public sealed class ScoringController(ScoringService scoringService) : Controlle
     public async Task<IResult> RegisterScore([FromBody] RegisterScoreApiRequest request, CancellationToken cancellationToken)
     {
         var result = await scoringService.RegisterScoreAsync(
-            new RegisterScoreRequest(request.RunId, request.ParticipantId, request.Rings),
+            new RegisterScoreRequest(request.RunId, request.ParticipantId, request.Rings, request.ClientSubmissionId),
             cancellationToken);
 
         return ToResult(result, StatusCodes.Status201Created);
@@ -40,7 +40,8 @@ public sealed class ScoringController(ScoringService scoringService) : Controlle
 
         var statusCode = result.Error!.Code.EndsWith("not_found", StringComparison.Ordinal)
             ? StatusCodes.Status404NotFound
-            : result.Error.Code.EndsWith("already_registered", StringComparison.Ordinal)
+            : (result.Error.Code.EndsWith("already_registered", StringComparison.Ordinal)
+                || result.Error.Code.EndsWith("conflict", StringComparison.Ordinal))
                 ? StatusCodes.Status409Conflict
                 : StatusCodes.Status400BadRequest;
 
