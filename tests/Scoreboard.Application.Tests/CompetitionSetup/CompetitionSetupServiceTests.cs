@@ -92,11 +92,12 @@ public sealed class CompetitionSetupServiceTests
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(3, result.Value?.ConfiguredRunCount);
-        Assert.Equal(new[] { 1, 2, 3 }, result.Value?.Runs.Select(run => run.SequenceNumber));
+        Assert.NotNull(result.Value);
+        Assert.Equal(3, result.Value.ConfiguredRunCount);
+        Assert.Equal(new[] { 1, 2, 3 }, result.Value.Runs.Select(run => run.SequenceNumber));
 
         var persistedRuns = await context.Runs
-            .Where(run => run.HeatId == result.Value!.Id)
+            .Where(run => run.HeatId == result.Value.Id)
             .OrderBy(run => run.SequenceNumber)
             .Select(run => run.SequenceNumber)
             .ToListAsync();
