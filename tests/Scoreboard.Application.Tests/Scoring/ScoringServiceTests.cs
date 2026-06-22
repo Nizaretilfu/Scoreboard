@@ -44,6 +44,88 @@ public sealed class ScoringServiceTests
     }
 
     [Fact]
+    public async Task RegisterScore_ReturnsExistingScore_WhenClientSubmissionIsRetried()
+    {
+        await using var context = CreateContext();
+        var (runId, participantId) = await SeedRunParticipantAsync(context);
+        var clientSubmissionId = Guid.NewGuid();
+        var publisher = new RecordingRealtimePublisher();
+        var service = CreateService(context, publisher);
+
+        var first = await service.RegisterScoreAsync(new RegisterScoreRequest(runId, participantId, 2, clientSubmissionId), CancellationToken.None);
+        var retry = await service.RegisterScoreAsync(new RegisterScoreRequest(runId, participantId, 2, clientSubmissionId), CancellationToken.None);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(retry.IsSuccess);
+        Assert.Equal(first.Value?.Id, retry.Value?.Id);
+        Assert.Equal(clientSubmissionId, retry.Value?.ClientSubmissionId);
+        Assert.Single(context.ScoreEntries);
+        Assert.Single(publisher.ScoreRegisteredEvents);
+    }
+
+    [Fact]
+    public async Task RegisterScore_ReturnsConflict_WhenClientSubmissionIdIsReusedForDifferentScore()
+    {
+        await using var context = CreateContext();
+        var (runId, participantId) = await SeedRunParticipantAsync(context);
+        var clientSubmissionId = Guid.NewGuid();
+        var service = CreateService(context);
+
+        await service.RegisterScoreAsync(new RegisterScoreRequest(runId, participantId, 1, clientSubmissionId), CancellationToken.None);
+        var retry = await service.RegisterScoreAsync(new RegisterScoreRequest(runId, participantId, 2, clientSubmissionId), CancellationToken.None);
+
+        Assert.False(retry.IsSuccess);
+        Assert.Equal("client_submission_id_conflict", retry.Error?.Code);
+    }
+
+    [Fact]
+    public async Task RegisterScore_AllowsSameParticipantInMultipleRunsWithinSameHeat_WhenSubmissionIdsAreDifferent()
+    {
+        await using var context = CreateContext();
+        var (firstRunId, secondRunId, participantId) = await SeedParticipantInTwoRunsWithinSameHeatAsync(context);
+        var service = CreateService(context);
+
+        var firstRunScore = await service.RegisterScoreAsync(
+            new RegisterScoreRequest(firstRunId, participantId, 2, Guid.NewGuid()),
+            CancellationToken.None);
+        var secondRunScore = await service.RegisterScoreAsync(
+            new RegisterScoreRequest(secondRunId, participantId, 1, Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.True(firstRunScore.IsSuccess);
+        Assert.True(secondRunScore.IsSuccess);
+        Assert.Equal(firstRunId, firstRunScore.Value?.RunId);
+        Assert.Equal(secondRunId, secondRunScore.Value?.RunId);
+        Assert.Equal(2, context.ScoreEntries.Count(x => x.ParticipantId == participantId));
+    }
+
+    [Fact]
+    public async Task RegisterScore_RetryForEarlierRunDoesNotBlockLaterRunForSameParticipant()
+    {
+        await using var context = CreateContext();
+        var (firstRunId, secondRunId, participantId) = await SeedParticipantInTwoRunsWithinSameHeatAsync(context);
+        var firstSubmissionId = Guid.NewGuid();
+        var secondSubmissionId = Guid.NewGuid();
+        var service = CreateService(context);
+
+        var firstRunScore = await service.RegisterScoreAsync(
+            new RegisterScoreRequest(firstRunId, participantId, 2, firstSubmissionId),
+            CancellationToken.None);
+        var secondRunScore = await service.RegisterScoreAsync(
+            new RegisterScoreRequest(secondRunId, participantId, 1, secondSubmissionId),
+            CancellationToken.None);
+        var firstRunRetry = await service.RegisterScoreAsync(
+            new RegisterScoreRequest(firstRunId, participantId, 2, firstSubmissionId),
+            CancellationToken.None);
+
+        Assert.True(firstRunScore.IsSuccess);
+        Assert.True(secondRunScore.IsSuccess);
+        Assert.True(firstRunRetry.IsSuccess);
+        Assert.Equal(firstRunScore.Value?.Id, firstRunRetry.Value?.Id);
+        Assert.Equal(2, context.ScoreEntries.Count(x => x.ParticipantId == participantId));
+    }
+
+    [Fact]
     public async Task RegisterScore_PublishesSemanticRealtimeEvent_WithRankChange()
     {
         await using var context = CreateContext();
@@ -168,6 +250,28 @@ public sealed class ScoringServiceTests
         await context.SaveChangesAsync();
 
         return (run.Id, participant.Id);
+    }
+
+    private static async Task<(Guid FirstRunId, Guid SecondRunId, Guid ParticipantId)> SeedParticipantInTwoRunsWithinSameHeatAsync(
+        ScoreboardDbContext context)
+    {
+        var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 20));
+        var heat = new Heat(Guid.NewGuid(), competition.Id, 1);
+        var firstRun = new Run(Guid.NewGuid(), heat.Id, 1);
+        var secondRun = new Run(Guid.NewGuid(), heat.Id, 2);
+        var participant = new Participant(Guid.NewGuid(), competition.Id, 12, "Rider");
+
+        context.AddRange(
+            competition,
+            heat,
+            firstRun,
+            secondRun,
+            participant,
+            new RunParticipant(Guid.NewGuid(), firstRun.Id, participant.Id),
+            new RunParticipant(Guid.NewGuid(), secondRun.Id, participant.Id));
+        await context.SaveChangesAsync();
+
+        return (firstRun.Id, secondRun.Id, participant.Id);
     }
 
     private sealed class RecordingRealtimePublisher : IScoreboardRealtimePublisher

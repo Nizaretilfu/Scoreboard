@@ -31,3 +31,14 @@ export type CompetitionLeaderboard = {
   rows: LeaderboardRow[];
   generatedAtUtc: string;
 };
+
+
+export type PendingScoreSubmission = {
+  clientSubmissionId: string;
+  runId: string;
+  participantId: string;
+  rings: 0 | 1 | 2;
+  createdAtUtc: string;
+  attemptCount: number;
+  lastError?: string;
+};

@@ -16,6 +16,27 @@ public sealed class ScoringService(
 {
     public async Task<OperationResult<ScoreEntryDto>> RegisterScoreAsync(RegisterScoreRequest request, CancellationToken cancellationToken)
     {
+        if (request.ClientSubmissionId is not null)
+        {
+            var existingSubmission = await dbContext.ScoreEntries.AsNoTracking().SingleOrDefaultAsync(
+                s => s.ClientSubmissionId == request.ClientSubmissionId,
+                cancellationToken);
+
+            if (existingSubmission is not null)
+            {
+                if (existingSubmission.RunId == request.RunId
+                    && existingSubmission.ParticipantId == request.ParticipantId
+                    && existingSubmission.Rings == request.Rings)
+                {
+                    return OperationResult<ScoreEntryDto>.Success(ToDto(existingSubmission));
+                }
+
+                return OperationResult<ScoreEntryDto>.Failure(
+                    "client_submission_id_conflict",
+                    "Client submission id was already used for a different score.");
+            }
+        }
+
         if (!await dbContext.RunParticipants.AnyAsync(
                 rp => rp.RunId == request.RunId && rp.ParticipantId == request.ParticipantId,
                 cancellationToken))
@@ -42,7 +63,7 @@ public sealed class ScoringService(
 
         try
         {
-            var entry = new ScoreEntry(Guid.NewGuid(), request.RunId, request.ParticipantId, request.Rings, DateTimeOffset.UtcNow);
+            var entry = new ScoreEntry(Guid.NewGuid(), request.RunId, request.ParticipantId, request.Rings, DateTimeOffset.UtcNow, request.ClientSubmissionId);
             dbContext.ScoreEntries.Add(entry);
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -208,5 +229,5 @@ public sealed class ScoringService(
     }
 
     private static ScoreEntryDto ToDto(ScoreEntry entry) =>
-        new(entry.Id, entry.RunId, entry.ParticipantId, entry.Rings, entry.RegisteredAtUtc);
+        new(entry.Id, entry.RunId, entry.ParticipantId, entry.Rings, entry.RegisteredAtUtc, entry.ClientSubmissionId);
 }
