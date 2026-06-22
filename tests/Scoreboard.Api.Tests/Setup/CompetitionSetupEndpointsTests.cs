@@ -46,24 +46,19 @@ public sealed class CompetitionSetupEndpointsTests : IClassFixture<CompetitionSe
         var heatResponse = await _httpClient.PostAsJsonAsync("/api/setup/heats", new
         {
             competitionId = competition.Id,
-            sequenceNumber = 1
+            sequenceNumber = 1,
+            configuredRunCount = 1
         });
 
         Assert.Equal(HttpStatusCode.Created, heatResponse.StatusCode);
         var heat = await heatResponse.Content.ReadFromJsonAsync<HeatResponse>();
 
-        var runResponse = await _httpClient.PostAsJsonAsync("/api/setup/runs", new
-        {
-            heatId = heat!.Id,
-            sequenceNumber = 1
-        });
-
-        Assert.Equal(HttpStatusCode.Created, runResponse.StatusCode);
-        var run = await runResponse.Content.ReadFromJsonAsync<RunResponse>();
+        Assert.NotNull(heat);
+        Assert.Single(heat!.Runs);
 
         var assignmentResponse = await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new
         {
-            runId = run!.Id,
+            runId = heat.Runs[0].Id,
             participantId = participant!.Id
         });
 
@@ -89,7 +84,8 @@ public sealed class CompetitionSetupEndpointsTests : IClassFixture<CompetitionSe
         var heat = await (await _httpClient.PostAsJsonAsync("/api/setup/heats", new
         {
             competitionId = competition.Id,
-            sequenceNumber = 1
+            sequenceNumber = 1,
+            configuredRunCount = 1
         })).Content.ReadFromJsonAsync<HeatResponse>();
 
         var run = await (await _httpClient.PostAsJsonAsync("/api/setup/runs", new
@@ -121,7 +117,7 @@ public sealed class CompetitionSetupEndpointsTests : IClassFixture<CompetitionSe
 
     private sealed record CompetitionResponse(Guid Id);
     private sealed record ParticipantResponse(Guid Id);
-    private sealed record HeatResponse(Guid Id);
+    private sealed record HeatResponse(Guid Id, int ConfiguredRunCount, IReadOnlyList<RunResponse> Runs);
     private sealed record RunResponse(Guid Id);
     private sealed record CompetitionRunResponse(Guid RunId, IReadOnlyList<RunParticipantResponse> Participants);
     private sealed record RunParticipantResponse(Guid ParticipantId);

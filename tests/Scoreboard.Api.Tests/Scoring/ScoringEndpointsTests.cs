@@ -76,27 +76,21 @@ public sealed class ScoringEndpointsTests : IClassFixture<Setup.CompetitionSetup
         var heatResponse = await _httpClient.PostAsJsonAsync("/api/setup/heats", new
         {
             competitionId = competition.Id,
-            sequenceNumber = 1
+            sequenceNumber = 1,
+            configuredRunCount = 1
         });
 
-        var heat = await heatResponse.Content.ReadFromJsonAsync<IdResponse>();
-
-        var runResponse = await _httpClient.PostAsJsonAsync("/api/setup/runs", new
-        {
-            heatId = heat!.Id,
-            sequenceNumber = 1
-        });
-
-        var run = await runResponse.Content.ReadFromJsonAsync<IdResponse>();
+        var heat = await heatResponse.Content.ReadFromJsonAsync<HeatResponse>();
 
         await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new
         {
-            runId = run!.Id,
+            runId = heat!.Runs[0].Id,
             participantId = participant!.Id
         });
 
-        return (run.Id, participant.Id);
+        return (heat.Runs[0].Id, participant.Id);
     }
 
     private sealed record IdResponse(Guid Id);
+    private sealed record HeatResponse(Guid Id, IReadOnlyList<IdResponse> Runs);
 }

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Scoreboard.Domain.Heats;
 using Scoreboard.Domain.Participants;
 using Scoreboard.Domain.RunParticipants;
 using Scoreboard.Domain.Scoring;
@@ -25,6 +26,23 @@ public sealed class ScoreboardDbContextModelTests
         var checkConstraints = entityType!.GetCheckConstraints();
 
         Assert.Contains(checkConstraints, c => c.Name == "ck_score_entries_rings");
+    }
+
+
+    [Fact]
+    public void Heat_HasConfiguredRunCountCheckConstraint()
+    {
+        var options = new DbContextOptionsBuilder<ScoreboardDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using var context = new ScoreboardDbContext(options);
+
+        var designTimeModel = context.GetService<IDesignTimeModel>().Model;
+        var entityType = designTimeModel.FindEntityType(typeof(Heat));
+        var checkConstraints = entityType!.GetCheckConstraints();
+
+        Assert.Contains(checkConstraints, c => c.Name == "ck_heats_configured_run_count");
     }
 
     [Fact]

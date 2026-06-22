@@ -19,7 +19,7 @@ public sealed class LeaderboardQueryServiceTests
         await using var context = CreateContext();
 
         var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 20));
-        var heat = new Heat(Guid.NewGuid(), competition.Id, 1);
+        var heat = new Heat(Guid.NewGuid(), competition.Id, 1, 1);
         var run = new Run(Guid.NewGuid(), heat.Id, 1);
 
         var participantA = new Participant(Guid.NewGuid(), competition.Id, 10, "A");

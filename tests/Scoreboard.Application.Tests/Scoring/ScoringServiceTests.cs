@@ -131,7 +131,7 @@ public sealed class ScoringServiceTests
         await using var context = CreateContext();
 
         var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 20));
-        var heat = new Heat(Guid.NewGuid(), competition.Id, 1);
+        var heat = new Heat(Guid.NewGuid(), competition.Id, 1, 1);
         var run = new Run(Guid.NewGuid(), heat.Id, 1);
         var participantA = new Participant(Guid.NewGuid(), competition.Id, 10, "A");
         var participantB = new Participant(Guid.NewGuid(), competition.Id, 11, "B");
@@ -241,7 +241,7 @@ public sealed class ScoringServiceTests
     private static async Task<(Guid RunId, Guid ParticipantId)> SeedRunParticipantAsync(ScoreboardDbContext context)
     {
         var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 20));
-        var heat = new Heat(Guid.NewGuid(), competition.Id, 1);
+        var heat = new Heat(Guid.NewGuid(), competition.Id, 1, 1);
         var run = new Run(Guid.NewGuid(), heat.Id, 1);
         var participant = new Participant(Guid.NewGuid(), competition.Id, 12, "Rider");
         var assignment = new RunParticipant(Guid.NewGuid(), run.Id, participant.Id);
@@ -256,7 +256,7 @@ public sealed class ScoringServiceTests
         ScoreboardDbContext context)
     {
         var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 20));
-        var heat = new Heat(Guid.NewGuid(), competition.Id, 1);
+        var heat = new Heat(Guid.NewGuid(), competition.Id, 1, 1);
         var firstRun = new Run(Guid.NewGuid(), heat.Id, 1);
         var secondRun = new Run(Guid.NewGuid(), heat.Id, 2);
         var participant = new Participant(Guid.NewGuid(), competition.Id, 12, "Rider");

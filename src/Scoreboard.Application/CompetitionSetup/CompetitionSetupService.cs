@@ -97,11 +97,21 @@ public sealed class CompetitionSetupService(IScoreboardDbContext dbContext)
 
         try
         {
-            var heat = new Heat(Guid.NewGuid(), request.CompetitionId, request.SequenceNumber);
+            var heat = new Heat(Guid.NewGuid(), request.CompetitionId, request.SequenceNumber, request.ConfiguredRunCount);
+            var runs = Enumerable.Range(1, heat.ConfiguredRunCount)
+                .Select(sequenceNumber => new Run(Guid.NewGuid(), heat.Id, sequenceNumber))
+                .ToList();
+
             dbContext.Heats.Add(heat);
+            dbContext.Runs.AddRange(runs);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return OperationResult<HeatDto>.Success(new HeatDto(heat.Id, heat.CompetitionId, heat.SequenceNumber));
+            return OperationResult<HeatDto>.Success(new HeatDto(
+                heat.Id,
+                heat.CompetitionId,
+                heat.SequenceNumber,
+                heat.ConfiguredRunCount,
+                runs.Select(run => new RunDto(run.Id, run.HeatId, run.SequenceNumber)).ToList()));
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
