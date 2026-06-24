@@ -15,17 +15,12 @@ public partial class AddHeatConfiguredRunCount : Migration
             nullable: false,
             defaultValue: 1);
 
-        migrationBuilder.AddCheckConstraint(
-            name: "ck_heats_configured_run_count",
-            table: "heats",
-            sql: "configured_run_count > 0");
+        migrationBuilder.Sql("ALTER TABLE heats ADD CONSTRAINT ck_heats_configured_run_count CHECK (configured_run_count > 0);");
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DropCheckConstraint(
-            name: "ck_heats_configured_run_count",
-            table: "heats");
+        migrationBuilder.Sql("ALTER TABLE heats DROP CONSTRAINT ck_heats_configured_run_count;");
 
         migrationBuilder.DropColumn(
             name: "configured_run_count",
