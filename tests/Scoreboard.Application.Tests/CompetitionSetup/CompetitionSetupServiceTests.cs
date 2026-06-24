@@ -92,12 +92,12 @@ public sealed class CompetitionSetupServiceTests
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(3, result.Value.ConfiguredRunCount);
-        Assert.Equal(new[] { 1, 2, 3 }, result.Value.Runs.Select(run => run.SequenceNumber));
+        var heat = result.Value ?? throw new InvalidOperationException("Expected created heat result to contain a value.");
+        Assert.Equal(3, heat.ConfiguredRunCount);
+        Assert.Equal(new[] { 1, 2, 3 }, heat.Runs.Select(run => run.SequenceNumber));
 
         var persistedRuns = await context.Runs
-            .Where(run => run.HeatId == result.Value.Id)
+            .Where(run => run.HeatId == heat.Id)
             .OrderBy(run => run.SequenceNumber)
             .Select(run => run.SequenceNumber)
             .ToListAsync();
