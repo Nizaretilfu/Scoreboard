@@ -46,16 +46,13 @@ public sealed class LeaderboardEndpointsTests : IClassFixture<Setup.CompetitionS
         var heat = await (await _httpClient.PostAsJsonAsync("/api/setup/heats", new
         {
             competitionId = competition.Id,
-            sequenceNumber = 1
-        })).Content.ReadFromJsonAsync<IdResponse>();
+            sequenceNumber = 1,
+            configuredRunCount = 1
+        })).Content.ReadFromJsonAsync<HeatResponse>();
 
-        var run = await (await _httpClient.PostAsJsonAsync("/api/setup/runs", new
-        {
-            heatId = heat!.Id,
-            sequenceNumber = 1
-        })).Content.ReadFromJsonAsync<IdResponse>();
+        var run = heat!.Runs[0];
 
-        await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new { runId = run!.Id, participantId = participantA.Id });
+        await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new { runId = run.Id, participantId = participantA.Id });
         await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new { runId = run.Id, participantId = participantB.Id });
         await _httpClient.PostAsJsonAsync("/api/setup/run-assignments", new { runId = run.Id, participantId = participantC.Id });
 
@@ -79,6 +76,7 @@ public sealed class LeaderboardEndpointsTests : IClassFixture<Setup.CompetitionS
     }
 
     private sealed record IdResponse(Guid Id);
+    private sealed record HeatResponse(Guid Id, IReadOnlyList<IdResponse> Runs);
 
     private sealed record CompetitionLeaderboardResponse(Guid CompetitionId, IReadOnlyList<LeaderboardRowResponse> Rows);
 

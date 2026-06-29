@@ -75,6 +75,22 @@ Protected endpoints:
 - `POST /api/scoring/scores` (register score for participant-in-run)
 - `PUT /api/scoring/scores` (correct existing score)
 
+### Competition setup API
+
+Management can create competitions, participants, heats, runs, and run assignments through `/api/setup`.
+
+When creating a heat, include `configuredRunCount` to define how many ring-riding runs/gennemløb the heat contains. The API validates this value must be greater than zero and no more than 100, then automatically creates runs with sequence numbers `1..configuredRunCount`. Manual run creation remains available for explicit follow-up adjustments, subject to the existing unique run sequence validation per heat.
+
+Example heat creation request:
+
+```json
+{
+  "competitionId": "<competition-id>",
+  "sequenceNumber": 1,
+  "configuredRunCount": 3
+}
+```
+
 ### Leaderboard query + realtime updates
 
 The MVP leaderboard is computed on demand from participant and score tables (no persisted projection).

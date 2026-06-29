@@ -57,13 +57,79 @@ public sealed class CompetitionSetupServiceTests
         Assert.Equal("participant_number_conflict", result.Error?.Code);
     }
 
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task CreateHeat_ReturnsValidationError_WhenConfiguredRunCountIsNotPositive(int configuredRunCount)
+    {
+        await using var context = CreateContext();
+        var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 17));
+        context.Competitions.Add(competition);
+        await context.SaveChangesAsync();
+
+        var service = new CompetitionSetupService(context);
+        var result = await service.CreateHeatAsync(
+            new CreateHeatRequest(competition.Id, 1, configuredRunCount),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("validation_error", result.Error?.Code);
+        Assert.Empty(context.Runs);
+    }
+
+    [Fact]
+    public async Task CreateHeat_ReturnsValidationError_WhenConfiguredRunCountExceedsMaximum()
+    {
+        await using var context = CreateContext();
+        var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 17));
+        context.Competitions.Add(competition);
+        await context.SaveChangesAsync();
+
+        var service = new CompetitionSetupService(context);
+        var result = await service.CreateHeatAsync(
+            new CreateHeatRequest(competition.Id, 1, Heat.MaxConfiguredRunCount + 1),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("validation_error", result.Error?.Code);
+        Assert.Empty(context.Runs);
+    }
+
+    [Fact]
+    public async Task CreateHeat_CreatesConfiguredRunsWithSequentialNumbers()
+    {
+        await using var context = CreateContext();
+        var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 17));
+        context.Competitions.Add(competition);
+        await context.SaveChangesAsync();
+
+        var service = new CompetitionSetupService(context);
+        var result = await service.CreateHeatAsync(
+            new CreateHeatRequest(competition.Id, 1, 3),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var heat = result.Value ?? throw new InvalidOperationException("Expected created heat result to contain a value.");
+        Assert.Equal(3, heat.ConfiguredRunCount);
+        Assert.Equal(new[] { 1, 2, 3 }, heat.Runs.Select(run => run.SequenceNumber));
+
+        var persistedRuns = await context.Runs
+            .Where(run => run.HeatId == heat.Id)
+            .OrderBy(run => run.SequenceNumber)
+            .Select(run => run.SequenceNumber)
+            .ToListAsync();
+
+        Assert.Equal(new[] { 1, 2, 3 }, persistedRuns);
+    }
+
     [Fact]
     public async Task AssignParticipantToRun_ReturnsCompetitionMismatch_WhenEntitiesBelongToDifferentCompetitions()
     {
         await using var context = CreateContext();
         var competition1 = new Competition(Guid.NewGuid(), "Cup 1", new DateOnly(2026, 3, 17));
         var competition2 = new Competition(Guid.NewGuid(), "Cup 2", new DateOnly(2026, 3, 17));
-        var heat = new Heat(Guid.NewGuid(), competition1.Id, 1);
+        var heat = new Heat(Guid.NewGuid(), competition1.Id, 1, 1);
         var run = new Run(Guid.NewGuid(), heat.Id, 1);
         var participant = new Participant(Guid.NewGuid(), competition2.Id, 10, "Rider");
 

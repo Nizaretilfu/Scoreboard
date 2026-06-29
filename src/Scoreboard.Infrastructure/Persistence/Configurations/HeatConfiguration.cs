@@ -8,12 +8,14 @@ public sealed class HeatConfiguration : IEntityTypeConfiguration<Heat>
 {
     public void Configure(EntityTypeBuilder<Heat> builder)
     {
-        builder.ToTable("heats");
+        builder.ToTable("heats", table =>
+            table.HasCheckConstraint("ck_heats_configured_run_count", "configured_run_count > 0"));
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).HasColumnName("id");
         builder.Property(x => x.CompetitionId).HasColumnName("competition_id").IsRequired();
         builder.Property(x => x.SequenceNumber).HasColumnName("sequence_number").IsRequired();
+        builder.Property(x => x.ConfiguredRunCount).HasColumnName("configured_run_count").IsRequired();
 
         builder.HasIndex(x => new { x.CompetitionId, x.SequenceNumber }).IsUnique();
 

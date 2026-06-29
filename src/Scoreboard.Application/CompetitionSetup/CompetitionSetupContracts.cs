@@ -2,13 +2,13 @@ namespace Scoreboard.Application.CompetitionSetup;
 
 public sealed record CreateCompetitionRequest(string Name, DateOnly CompetitionDate);
 public sealed record RegisterParticipantRequest(Guid CompetitionId, int Number, string Name);
-public sealed record CreateHeatRequest(Guid CompetitionId, int SequenceNumber);
+public sealed record CreateHeatRequest(Guid CompetitionId, int SequenceNumber, int ConfiguredRunCount);
 public sealed record CreateRunRequest(Guid HeatId, int SequenceNumber);
 public sealed record AssignParticipantToRunRequest(Guid RunId, Guid ParticipantId);
 
 public sealed record CompetitionDto(Guid Id, string Name, DateOnly CompetitionDate);
 public sealed record ParticipantDto(Guid Id, Guid CompetitionId, int Number, string Name);
-public sealed record HeatDto(Guid Id, Guid CompetitionId, int SequenceNumber);
+public sealed record HeatDto(Guid Id, Guid CompetitionId, int SequenceNumber, int ConfiguredRunCount, IReadOnlyList<RunDto> Runs);
 public sealed record RunDto(Guid Id, Guid HeatId, int SequenceNumber);
 public sealed record RunParticipantDto(Guid Id, Guid RunId, Guid ParticipantId);
 public sealed record CompetitionOverviewDto(Guid Id, string Name, DateOnly CompetitionDate);

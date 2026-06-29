@@ -33,10 +33,12 @@ partial class ScoreboardDbContextModelSnapshot : ModelSnapshot
             {
                 b.Property<Guid>("Id").HasColumnType("uuid").HasColumnName("id");
                 b.Property<Guid>("CompetitionId").HasColumnType("uuid").HasColumnName("competition_id");
+                b.Property<int>("ConfiguredRunCount").HasColumnType("integer").HasColumnName("configured_run_count");
                 b.Property<int>("SequenceNumber").HasColumnType("integer").HasColumnName("sequence_number");
                 b.HasKey("Id");
                 b.HasIndex("CompetitionId", "SequenceNumber").IsUnique();
                 b.ToTable("heats", (string)null);
+                b.ToTable("heats", t => t.HasCheckConstraint("ck_heats_configured_run_count", "configured_run_count > 0"));
             });
 
         modelBuilder.Entity("Scoreboard.Domain.Participants.Participant", b =>

@@ -51,7 +51,7 @@ public sealed class CompetitionSetupController(CompetitionSetupService setupServ
     [HttpPost("heats")]
     public async Task<IResult> CreateHeat([FromBody] CreateHeatApiRequest request, CancellationToken cancellationToken)
     {
-        var result = await setupService.CreateHeatAsync(new CreateHeatRequest(request.CompetitionId, request.SequenceNumber), cancellationToken);
+        var result = await setupService.CreateHeatAsync(new CreateHeatRequest(request.CompetitionId, request.SequenceNumber, request.ConfiguredRunCount), cancellationToken);
         return ToResult(result, StatusCodes.Status201Created);
     }
 
