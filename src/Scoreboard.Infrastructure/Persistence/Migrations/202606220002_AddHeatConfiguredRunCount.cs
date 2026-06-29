@@ -15,6 +15,17 @@ public partial class AddHeatConfiguredRunCount : Migration
             nullable: false,
             defaultValue: 1);
 
+        migrationBuilder.Sql("""
+            UPDATE heats
+            SET configured_run_count = run_counts.run_count
+            FROM (
+                SELECT heat_id, COUNT(*)::integer AS run_count
+                FROM runs
+                GROUP BY heat_id
+            ) AS run_counts
+            WHERE heats.id = run_counts.heat_id;
+            """);
+
         migrationBuilder.Sql("ALTER TABLE heats ADD CONSTRAINT ck_heats_configured_run_count CHECK (configured_run_count > 0);");
     }
 

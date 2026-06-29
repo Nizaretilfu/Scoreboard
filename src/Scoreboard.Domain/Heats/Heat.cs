@@ -2,6 +2,8 @@ namespace Scoreboard.Domain.Heats;
 
 public sealed class Heat
 {
+    public const int MaxConfiguredRunCount = 100;
+
     public Guid Id { get; private set; }
     public Guid CompetitionId { get; private set; }
     public int SequenceNumber { get; private set; }
@@ -21,6 +23,11 @@ public sealed class Heat
         if (configuredRunCount <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(configuredRunCount), "Configured run count must be greater than zero.");
+        }
+
+        if (configuredRunCount > MaxConfiguredRunCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(configuredRunCount), $"Configured run count must be {MaxConfiguredRunCount} or less.");
         }
 
         Id = id;

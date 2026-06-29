@@ -79,6 +79,24 @@ public sealed class CompetitionSetupServiceTests
     }
 
     [Fact]
+    public async Task CreateHeat_ReturnsValidationError_WhenConfiguredRunCountExceedsMaximum()
+    {
+        await using var context = CreateContext();
+        var competition = new Competition(Guid.NewGuid(), "Cup", new DateOnly(2026, 3, 17));
+        context.Competitions.Add(competition);
+        await context.SaveChangesAsync();
+
+        var service = new CompetitionSetupService(context);
+        var result = await service.CreateHeatAsync(
+            new CreateHeatRequest(competition.Id, 1, Heat.MaxConfiguredRunCount + 1),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("validation_error", result.Error?.Code);
+        Assert.Empty(context.Runs);
+    }
+
+    [Fact]
     public async Task CreateHeat_CreatesConfiguredRunsWithSequentialNumbers()
     {
         await using var context = CreateContext();
